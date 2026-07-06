@@ -6,14 +6,18 @@
  .wrap{max-width:860px;margin:0 auto;padding:24px}
  h1{font-size:1.5em;margin-bottom:0} .sub{color:#607d8b;margin-top:4px}
  .gauge{background:#fff;border-radius:10px;padding:18px 22px;margin:18px 0;
-        box-shadow:0 1px 3px rgba(0,0,0,.12);border-left:8px solid #2e7d32}
- .gauge .big{font-size:2em;font-weight:700;color:#2e7d32}
+        box-shadow:0 1px 3px rgba(0,0,0,.12);border-left:8px solid #c62828}
+ .gauge .big{font-size:1.6em;font-weight:700;color:#c62828}
+ .gauge .counts{font-size:1.1em;margin-top:4px}
+ .gauge .moy{color:#78909c;font-size:.85em;margin-top:8px}
  .card{background:#fff;border-radius:8px;padding:12px 16px;margin:10px 0;
        box-shadow:0 1px 2px rgba(0,0,0,.10)}
  .card h3{margin:2px 0 8px;font-size:1.02em}
+ .meta{color:#78909c;font-size:.82em;margin-bottom:6px}
  .badge{background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:10px;
         font-size:.72em;padding:1px 8px;vertical-align:middle}
  .badge-q{background:#ede7f6;color:#4527a0;border-color:#b39ddb}
+ .badge-g{background:#eceff1;color:#546e7a;border-color:#b0bec5}
  .thermo{position:relative;background:#eceff1;height:22px;border-radius:11px;overflow:hidden}
  .fill{height:100%} .zlab{position:absolute;top:2px;left:10px;font-size:.8em;color:#263238}
  .na{color:#90a4ae;font-style:italic}
@@ -30,95 +34,114 @@
 couverture pondérée 79%</div>
 
 <div class="gauge">
-  <div>Indice composite (z pondéré crédibilité)</div>
-  <div class="big">VERT &nbsp; z = +0.33</div>
-  <div class="legend">vert &lt; 0.5 ≤ orange &lt; 1.5 ≤ rouge —
-  compteur de faux positifs live : <b>0</b> relevé(s) rouge(s) sans krach constaté</div>
-  <svg viewBox="0 0 640 80" class="spark"><line x1="5" y1="16.7" x2="635" y2="16.7" stroke="#c62828" stroke-dasharray="4 3" stroke-width="1"/><polyline points="5.0,27.9 7.6,27.9 10.3,26.1 12.9,25.7 15.5,25.7 18.2,27.1 20.8,27.2 23.5,28.1 26.1,22.3 28.7,22.4 31.4,22.8 34.0,25.8 36.6,26.6 39.3,25.6 41.9,25.7 44.5,26.7 47.2,25.7 49.8,28.2 52.4,28.5 55.1,28.6 57.7,36.1 60.4,35.0 63.0,35.7 65.6,32.0 68.3,32.3 70.9,35.0 73.5,51.2 76.2,51.0 78.8,46.6 81.4,51.7 84.1,51.3 86.7,52.1 89.4,52.0 92.0,52.3 94.6,52.4 97.3,51.7 99.9,51.5 102.5,51.4 105.2,41.5 107.8,41.0 110.4,41.5 113.1,41.0 115.7,41.7 118.3,41.9 121.0,44.5 123.6,46.2 126.3,46.1 128.9,45.3 131.5,44.4 134.2,43.7 136.8,45.0 139.4,45.2 142.1,45.8 144.7,43.4 147.3,43.6 150.0,43.4 152.6,41.6 155.3,41.2 157.9,41.2 160.5,41.6 163.2,42.2 165.8,42.1 168.4,46.5 171.1,46.3 173.7,46.0 176.3,48.9 179.0,48.7 181.6,48.7 184.2,46.3 186.9,46.6 189.5,46.6 192.2,46.1 194.8,46.3 197.4,46.1 200.1,45.5 202.7,45.7 205.3,46.0 208.0,47.7 210.6,48.0 213.2,47.7 215.9,44.0 218.5,44.3 221.2,46.0 223.8,46.4 226.4,46.5 229.1,46.5 231.7,46.5 234.3,46.0 237.0,46.5 239.6,44.5 242.2,44.2 244.9,44.3 247.5,45.6 250.1,45.1 252.8,44.8 255.4,43.0 258.1,43.2 260.7,43.7 263.3,44.2 266.0,43.5 268.6,43.9 271.2,42.9 273.9,42.4 276.5,42.4 279.1,43.2 281.8,43.5 284.4,44.1 287.1,43.1 289.7,43.6 292.3,44.5 295.0,45.3 297.6,45.4 300.2,45.9 302.9,46.6 305.5,45.8 308.1,44.4 310.8,43.6 313.4,43.6 316.0,43.7 318.7,41.4 321.3,41.3 324.0,41.9 326.6,43.3 329.2,44.3 331.9,44.7 334.5,44.0 337.1,43.6 339.8,43.2 342.4,42.3 345.0,41.9 347.7,41.8 350.3,40.7 352.9,40.8 355.6,40.6 358.2,38.5 360.9,38.7 363.5,38.6 366.1,38.5 368.8,40.7 371.4,40.5 374.0,37.8 376.7,36.8 379.3,36.0 381.9,39.2 384.6,38.7 387.2,38.7 389.9,38.2 392.5,38.4 395.1,39.4 397.8,41.9 400.4,41.4 403.0,41.2 405.7,43.7 408.3,44.1 410.9,43.6 413.6,41.0 416.2,41.3 418.8,40.7 421.5,41.2 424.1,40.6 426.8,40.7 429.4,39.9 432.0,39.8 434.7,45.4 437.3,42.9 439.9,40.2 442.6,40.2 445.2,42.6 447.8,41.5 450.5,41.8 453.1,34.1 455.8,33.5 458.4,33.2 461.0,31.7 463.7,32.1 466.3,33.7 468.9,30.2 471.6,31.2 474.2,30.8 476.8,28.8 479.5,28.4 482.1,29.3 484.7,33.2 487.4,33.2 490.0,33.5 492.7,35.2 495.3,36.5 497.9,37.3 500.6,43.2 503.2,44.4 505.8,44.1 508.5,46.7 511.1,46.0 513.7,48.1 516.4,51.7 519.0,50.6 521.7,50.6 524.3,53.0 526.9,53.1 529.6,53.0 532.2,50.2 534.8,49.1 537.5,48.1 540.1,49.5 542.7,51.1 545.4,51.9 548.0,45.6 550.6,44.4 553.3,43.3 555.9,42.7 558.6,42.8 561.2,42.5 563.8,43.9 566.5,43.3 569.1,42.7 571.7,42.3 574.4,43.0 577.0,42.9 579.6,44.3 582.3,43.7 584.9,43.7 587.6,42.9 590.2,42.9 592.8,43.8 595.5,49.0 598.1,47.3 600.7,46.9 603.4,43.3 606.0,43.0 608.6,42.6 611.3,43.1 613.9,38.8 616.5,38.3 619.2,40.0 621.8,38.1 624.5,41.4 627.1,39.1 629.7,31.5 632.4,30.8 635.0,29.3" fill="none" stroke="#37474f" stroke-width="1.5"/></svg><div class="legend">Composite — 20 dernières années (pointillé rouge = seuil 1.5)</div>
+  <div>État d'alerte — piloté par le pire signe (agrégation non diluante)</div>
+  <div class="big">ROUGE — pire signe : Survalorisation / prix vs fondamentaux &nbsp;z = +2.86</div>
+  <div class="counts"><b>1</b> rouge / <b>3</b> orange
+  (sur les signes à jour, seuils : orange ≥ 0.5, rouge ≥ 1.5)</div>
+  <div class="moy">moyenne indicative (pondérée crédibilité, ex-« composite » — dilue les
+  extrêmes, ne pilote plus l'en-tête) : z = +0.33 (vert) —
+  compteur de faux positifs live : <b>1</b> en-tête(s) rouge(s) sans krach constaté</div>
+  <svg viewBox="0 0 640 80" class="spark"><line x1="5" y1="37.1" x2="635" y2="37.1" stroke="#c62828" stroke-dasharray="4 3" stroke-width="1"/><polyline points="5.0,44.4 7.6,44.4 10.3,43.2 12.9,43.0 15.5,43.0 18.2,43.9 20.8,43.9 23.5,44.5 26.1,40.8 28.7,40.9 31.4,41.1 34.0,43.0 36.6,43.5 39.3,42.9 41.9,42.9 44.5,43.6 47.2,42.9 49.8,44.6 52.4,44.8 55.1,44.9 57.7,49.7 60.4,48.9 63.0,49.4 65.6,47.1 68.3,47.3 70.9,49.1 73.5,59.4 76.2,59.3 78.8,56.5 81.4,59.7 84.1,59.4 86.7,60.0 89.4,59.9 92.0,60.1 94.6,60.2 97.3,59.7 99.9,59.6 102.5,59.5 105.2,53.3 107.8,53.0 110.4,53.2 113.1,53.0 115.7,53.4 118.3,53.5 121.0,55.2 123.6,56.3 126.3,56.3 128.9,55.7 131.5,55.2 134.2,54.7 136.8,55.5 139.4,55.7 142.1,56.1 144.7,54.5 147.3,54.7 150.0,54.5 152.6,53.3 155.3,53.1 157.9,53.0 160.5,53.3 163.2,53.7 165.8,53.6 168.4,56.5 171.1,56.3 173.7,56.1 176.3,58.0 179.0,57.9 181.6,57.9 184.2,56.3 186.9,56.5 189.5,56.5 192.2,56.2 194.8,56.4 197.4,56.2 200.1,55.8 202.7,56.0 205.3,56.2 208.0,57.2 210.6,57.4 213.2,57.3 215.9,54.9 218.5,55.1 221.2,56.2 223.8,56.4 226.4,56.5 229.1,56.5 231.7,56.5 234.3,56.2 237.0,56.5 239.6,55.1 242.2,55.0 244.9,55.1 247.5,55.9 250.1,55.6 252.8,55.3 255.4,54.2 258.1,54.4 260.7,54.7 263.3,55.0 266.0,54.5 268.6,54.8 271.2,54.1 273.9,53.8 276.5,53.8 279.1,54.3 281.8,54.5 284.4,54.9 287.1,54.2 289.7,54.6 292.3,55.1 295.0,55.6 297.6,55.7 300.2,56.1 302.9,56.5 305.5,56.0 308.1,55.1 310.8,54.5 313.4,54.5 316.0,54.7 318.7,53.1 321.3,53.1 324.0,53.5 326.6,54.4 329.2,55.1 331.9,55.3 334.5,54.9 337.1,54.6 339.8,54.3 342.4,53.8 345.0,53.5 347.7,53.4 350.3,52.7 352.9,52.8 355.6,52.7 358.2,51.3 360.9,51.4 363.5,51.4 366.1,51.3 368.8,52.7 371.4,52.6 374.0,50.8 376.7,50.2 379.3,49.7 381.9,51.7 384.6,51.5 387.2,51.4 389.9,51.1 392.5,51.2 395.1,51.8 397.8,53.5 400.4,53.1 403.0,53.0 405.7,54.6 408.3,54.9 410.9,54.6 413.6,52.9 416.2,53.1 418.8,52.7 421.5,53.0 424.1,52.7 426.8,52.7 429.4,52.2 432.0,52.1 434.7,55.8 437.3,54.1 439.9,52.4 442.6,52.4 445.2,54.0 447.8,53.2 450.5,53.5 453.1,48.5 455.8,48.1 458.4,47.9 461.0,46.9 463.7,47.2 466.3,48.2 468.9,46.0 471.6,46.6 474.2,46.4 476.8,45.0 479.5,44.8 482.1,45.4 484.7,47.8 487.4,47.9 490.0,48.1 492.7,49.1 495.3,50.0 497.9,50.5 500.6,54.3 503.2,55.1 505.8,54.9 508.5,56.6 511.1,56.1 513.7,57.5 516.4,59.8 519.0,59.1 521.7,59.1 524.3,60.7 526.9,60.7 529.6,60.7 532.2,58.8 534.8,58.1 537.5,57.5 540.1,58.4 542.7,59.5 545.4,59.9 548.0,55.9 550.6,55.1 553.3,54.4 555.9,54.0 558.6,54.1 561.2,53.9 563.8,54.8 566.5,54.4 569.1,54.0 571.7,53.8 574.4,54.2 577.0,54.2 579.6,55.1 582.3,54.7 584.9,54.7 587.6,54.1 590.2,54.1 592.8,54.7 595.5,58.1 598.1,57.0 600.7,56.7 603.4,54.4 606.0,54.2 608.6,54.0 611.3,54.3 613.9,51.5 616.5,51.2 619.2,52.3 621.8,51.0 624.5,53.2 627.1,51.6 629.7,46.8 632.4,46.3 635.0,45.3" fill="none" stroke="#b0bec5" stroke-width="1"/><polyline points="5.0,15.1 7.6,15.4 10.3,15.9 12.9,16.2 15.5,16.5 18.2,21.4 20.8,21.6 23.5,21.8 26.1,7.0 28.7,7.5 31.4,8.0 34.0,14.5 36.6,14.8 39.3,15.2 41.9,5.0 44.5,5.5 47.2,6.1 49.8,26.5 52.4,26.6 55.1,26.8 57.7,26.1 60.4,22.6 63.0,19.0 65.6,19.3 68.3,23.0 70.9,25.3 73.5,15.1 76.2,15.4 78.8,13.4 81.4,9.7 84.1,8.6 86.7,14.3 89.4,24.8 92.0,35.0 94.6,41.0 97.3,43.9 99.9,44.0 102.5,44.0 105.2,39.7 107.8,39.7 110.4,39.8 113.1,39.4 115.7,39.5 118.3,39.5 121.0,42.4 123.6,42.4 126.3,42.4 128.9,41.6 131.5,41.6 134.2,41.6 136.8,39.2 139.4,39.3 142.1,39.4 144.7,37.1 147.3,37.2 150.0,37.4 152.6,33.5 155.3,33.5 157.9,33.6 160.5,24.1 163.2,24.3 165.8,24.4 168.4,39.0 171.1,39.0 173.7,39.1 176.3,36.1 179.0,36.3 181.6,36.4 184.2,35.2 186.9,35.3 189.5,35.4 192.2,35.4 194.8,35.6 197.4,35.7 200.1,35.9 202.7,36.0 205.3,36.2 208.0,34.8 210.6,34.9 213.2,35.1 215.9,36.8 218.5,36.9 221.2,37.0 223.8,36.4 226.4,36.5 229.1,36.7 231.7,34.5 234.3,33.7 237.0,33.5 239.6,32.4 242.2,32.8 244.9,32.4 247.5,31.8 250.1,31.7 252.8,31.1 255.4,31.7 258.1,32.0 260.7,31.8 263.3,31.5 266.0,29.9 268.6,29.8 271.2,30.3 273.9,29.8 276.5,30.2 279.1,31.0 281.8,31.1 284.4,31.5 287.1,24.3 289.7,24.4 292.3,24.6 295.0,32.0 297.6,32.1 300.2,32.2 302.9,33.1 305.5,33.2 308.1,33.3 310.8,33.4 313.4,33.5 316.0,33.5 318.7,32.3 321.3,32.1 324.0,32.4 326.6,33.1 329.2,32.7 331.9,31.7 334.5,30.0 337.1,29.4 339.8,29.0 342.4,29.1 345.0,28.7 347.7,28.3 350.3,27.6 352.9,27.8 355.6,27.6 358.2,25.5 360.9,25.2 363.5,24.4 366.1,24.0 368.8,25.5 371.4,25.9 374.0,13.5 376.7,13.8 379.3,14.1 381.9,23.8 384.6,23.3 387.2,23.2 389.9,17.7 392.5,18.0 395.1,18.2 397.8,29.5 400.4,28.3 403.0,28.4 405.7,27.5 408.3,28.5 410.9,28.6 413.6,28.2 416.2,29.7 418.8,29.2 421.5,27.7 424.1,26.7 426.8,26.3 429.4,32.6 432.0,32.9 434.7,39.5 437.3,27.8 439.9,19.6 442.6,18.3 445.2,16.5 447.8,16.8 450.5,16.7 453.1,17.9 455.8,16.9 458.4,15.7 461.0,13.5 463.7,13.1 466.3,13.4 468.9,9.9 471.6,10.4 474.2,10.5 476.8,11.0 479.5,10.7 482.1,11.3 484.7,10.4 487.4,9.3 490.0,9.9 492.7,14.7 495.3,16.6 497.9,17.9 500.6,26.0 503.2,29.4 505.8,31.2 508.5,33.4 511.1,31.6 513.7,34.3 516.4,34.8 519.0,33.5 521.7,33.6 524.3,31.8 526.9,31.2 529.6,32.3 532.2,29.5 534.8,29.6 537.5,28.4 540.1,29.5 542.7,30.2 545.4,30.8 548.0,18.9 550.6,19.1 553.3,19.3 555.9,23.2 558.6,22.3 561.2,21.7 563.8,22.0 566.5,21.5 569.1,20.5 571.7,18.5 574.4,19.2 577.0,18.6 579.6,17.4 582.3,16.8 584.9,16.6 587.6,19.6 590.2,19.6 592.8,22.2 595.5,21.7 598.1,19.4 600.7,18.5 603.4,15.2 606.0,15.0 608.6,14.5 611.3,13.6 613.9,13.9 616.5,13.7 619.2,15.6 621.8,17.0 624.5,21.2 627.1,19.1 629.7,15.4 632.4,16.0 635.0,16.5" fill="none" stroke="#37474f" stroke-width="1.5"/></svg><div class="legend">20 dernières années — trait foncé : pire signe (en-tête) ; gris clair : moyenne indicative ; pointillé rouge = seuil 1.5</div>
 </div>
 
-<h2>Les 14 signes suivis</h2>
+<h2>Scorecard des 14 signes — triés par z décroissant</h2>
 
-    <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°1 — Expansion excessive du crédit / levier </h3>
-      <div class="thermo"><div class="fill" style="width:25%;background:#2e7d32"></div><span class="zlab">z=-1.53</span></div>
-      <details><summary>métriques (poids crédibilité 8.03)</summary><ul><li>Crédit privé non financier / PIB (BIS) — écart à la tendance (gap, type BIS)</li><li>Dette sur marge FINRA — croissance sur 12 mois (%) <em>(optionnelle)</em></li></ul></details>
-    </div>
-    <div class="card" style="border-left:6px solid #9e9e9e">
-      <h3>n°2 — Euphorie spéculative / psychologie de foule <span class="badge">≈ proxy approximatif</span></h3>
-      <div class="thermo"><span class="na">indisponible</span></div>
-      <details><summary>métriques (poids crédibilité 7.63)</summary><ul><li>Sentiment AAII — écart haussiers − baissiers (pts) <em>(optionnelle)</em></li><li>Ratio put/call actions CBOE (bas = euphorie) <em>(optionnelle)</em></li></ul></details>
-    </div>
-    <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°3 — Innovation financière / relâchement des standards de prêt </h3>
-      <div class="thermo"><div class="fill" style="width:49%;background:#2e7d32"></div><span class="zlab">z=-0.06</span></div>
-      <details><summary>métriques (poids crédibilité 7.7)</summary><ul><li>SLOOS — % net de banques durcissant les prêts C&I (bas/négatif = relâchement)</li></ul></details>
-    </div>
     <div class="card" style="border-left:6px solid #c62828">
       <h3>n°5 — Survalorisation / prix vs fondamentaux </h3>
+      <div class="meta">rouge · z=+2.86 · données 2026-07</div>
       <div class="thermo"><div class="fill" style="width:98%;background:#c62828"></div><span class="zlab">z=+2.86</span></div>
       <details><summary>métriques (poids crédibilité 7.44)</summary><ul><li>CAPE de Shiller (P/E ajusté du cycle, depuis 1871)</li><li>« Indicateur Buffett » : actions sociétés non financières (Z.1) / PIB (%) — remplace Wilshire/PIB (série retirée de FRED)</li></ul></details>
     </div>
-    <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°9 — Conditions monétaires accommodantes </h3>
-      <div class="thermo"><div class="fill" style="width:46%;background:#2e7d32"></div><span class="zlab">z=-0.27</span></div>
-      <details><summary>métriques (poids crédibilité 7.9)</summary><ul><li>Pente de la courbe 10 ans − 3 mois (pts %) — basse/inversée = danger</li><li>M2 — croissance sur 12 mois (%)</li><li>Taux réel 10 ans (TIPS, %) — bas = accommodant</li></ul></details>
-    </div>
-    <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°10 — Compression des primes de risque / complaisance </h3>
-      <div class="thermo"><div class="fill" style="width:56%;background:#2e7d32"></div><span class="zlab">z=+0.39</span></div>
-      <details><summary>métriques (poids crédibilité 7.8)</summary><ul><li>Spread obligataire Baa − Aaa Moody's (pts %, depuis 1919) — bas = compression du risque de crédit</li><li>VIX (moyenne mensuelle) — très bas = complaisance</li></ul></details>
-    </div>
-    <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°6 — Fragilité structurelle du système financier </h3>
-      <div class="thermo"><div class="fill" style="width:58%;background:#2e7d32"></div><span class="zlab">z=+0.47</span></div>
-      <details><summary>métriques (poids crédibilité 8.75)</summary><ul><li>Sous-indice « levier » du NFCI (Chicago Fed, hebdo depuis 1971) — mesures de dette et de fonds propres du système financier. Sens fixé par l'EMPREINTE (calibrate 2026-07) : z BRUT positif à T-12 avant les krachs (2008 = +1,17, le plus fort) → danger=high. La convention Chicago Fed (positif = conditions plus tendues) suggérait low, mais l'empreinte l'infirme (low = vert avant TOUS les krachs). Signal faible hors 2008 (couverture 1971→, 4 krachs seulement).</li></ul></details>
-    </div>
     <div class="card" style="border-left:6px solid #ef6c00">
-      <h3>n°12 — Surchauffe des transactions (volumes, IPO, margin) </h3>
-      <div class="thermo"><div class="fill" style="width:63%;background:#ef6c00"></div><span class="zlab">z=+0.80</span></div>
-      <details><summary>métriques (poids crédibilité 7.63)</summary><ul><li>Prêts sur marge / créances clients dues aux courtiers (Fed Z.1, trimestriel depuis 1945) — croissance sur 12 mois (%). Forte accélération = surchauffe (ex. 1929, 2000, 2021).</li><li>Volume d'introductions en bourse (IPO) — croissance 12 mois. Proxy APPROXIMATIF de surchauffe du marché primaire. <span class="badge">≈</span> <em>(optionnelle)</em></li></ul></details>
+      <h3>n°15 — Montée des inégalités / concentration des richesses </h3>
+      <div class="meta">orange · z=+1.49 · données 2026-01</div>
+      <div class="thermo"><div class="fill" style="width:75%;background:#ef6c00"></div><span class="zlab">z=+1.49</span></div>
+      <details><summary>métriques (poids crédibilité 8.33)</summary><ul><li>Part du patrimoine net détenue par le top 1 % (Distributional Financial Accounts de la Fed, trimestriel depuis 1989) — concentration croissante = danger.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #ef6c00">
       <h3>n°8 — Déséquilibres globaux / flux de capitaux </h3>
+      <div class="meta">orange · z=+0.90 · données 2026-01</div>
       <div class="thermo"><div class="fill" style="width:65%;background:#ef6c00"></div><span class="zlab">z=+0.90</span></div>
       <details><summary>métriques (poids crédibilité 8.5)</summary><ul><li>Balance courante US (base NIPA, NETFI) rapportée au PIB — un déficit qui se creuse (valeur basse) = entrées de capitaux / déséquilibre externe = danger. SENS À VALIDER sur l'empreinte (comme le signe 6). Le z-score étant insensible à l'échelle, ratio_gdp reste correct malgré l'unité NIPA.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #ef6c00">
-      <h3>n°15 — Montée des inégalités / concentration des richesses </h3>
-      <div class="thermo"><div class="fill" style="width:75%;background:#ef6c00"></div><span class="zlab">z=+1.49</span></div>
-      <details><summary>métriques (poids crédibilité 8.33)</summary><ul><li>Part du patrimoine net détenue par le top 1 % (Distributional Financial Accounts de la Fed, trimestriel depuis 1989) — concentration croissante = danger.</li></ul></details>
+      <h3>n°12 — Surchauffe des transactions (volumes, IPO, margin) </h3>
+      <div class="meta">orange · z=+0.78 · données 2026-01</div>
+      <div class="thermo"><div class="fill" style="width:63%;background:#ef6c00"></div><span class="zlab">z=+0.78</span></div>
+      <details><summary>métriques (poids crédibilité 7.63)</summary><ul><li>Prêts sur marge / créances clients dues aux courtiers (Fed Z.1, trimestriel depuis 1945) — croissance sur 12 mois (%). Forte accélération = surchauffe (ex. 1929, 2000, 2021).</li><li>Volume d'introductions en bourse (IPO) — croissance 12 mois. Proxy APPROXIMATIF de surchauffe du marché primaire. <span class="badge">≈</span> <em>(optionnelle)</em></li></ul></details>
     </div>
-    <div class="card" style="border-left:6px solid #9e9e9e">
-      <h3>n°7 — Complaisance réglementaire / déréglementation <span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span></h3>
-      <div class="thermo"><span class="na">indisponible</span></div>
-      <details><summary>métriques (poids crédibilité 8.43)</summary><ul><li>Climat de déréglementation financière — JUGEMENT (pas une mesure). Épisodes marquants : Gramm-Leach-Bliley 1999, CFMA 2000, assouplissement du net capital rule SEC 2004, détricotage Dodd-Frank. Proxy objectif possible : indice de restrictions réglementaires RegData/Mercatus (sens inversé). En attente d'un fichier data/manual/dereg_score.csv (date,value ; valeur haute = déréglementation forte = danger). <em>(optionnelle)</em></li></ul></details>
+    <div class="card" style="border-left:6px solid #2e7d32">
+      <h3>n°6 — Fragilité structurelle du système financier </h3>
+      <div class="meta">vert · z=+0.47 · données 2026-06</div>
+      <div class="thermo"><div class="fill" style="width:58%;background:#2e7d32"></div><span class="zlab">z=+0.47</span></div>
+      <details><summary>métriques (poids crédibilité 8.75)</summary><ul><li>Sous-indice « levier » du NFCI (Chicago Fed, hebdo depuis 1971) — mesures de dette et de fonds propres du système financier. Sens fixé par l'EMPREINTE (calibrate 2026-07) : z BRUT positif à T-12 avant les krachs (2008 = +1,17, le plus fort) → danger=high. La convention Chicago Fed (positif = conditions plus tendues) suggérait low, mais l'empreinte l'infirme (low = vert avant TOUS les krachs). Signal faible hors 2008 (couverture 1971→, 4 krachs seulement).</li></ul></details>
     </div>
-    <div class="card" style="border-left:6px solid #9e9e9e">
-      <h3>n°4 — Déplacement / narratif « cette fois c'est différent » <span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span></h3>
-      <div class="thermo"><span class="na">indisponible</span></div>
-      <details><summary>métriques (poids crédibilité 7.78)</summary><ul><li>Intensité du récit « cette fois c'est différent » justifiant des valorisations extrêmes — JUGEMENT (pas une mesure). Typiquement : nouvelle techno ou instrument financier (chemins de fer, dot-com, subprime/titrisation, IA). Proxy possible : fréquence média/Google Trends de la formule, ou nombre d'articles « new paradigm ». En attente d'un fichier data/manual/narrative_score.csv (date,value ; valeur haute = récit euphorique dominant = danger). <em>(optionnelle)</em></li></ul></details>
+    <div class="card" style="border-left:6px solid #2e7d32">
+      <h3>n°10 — Compression des primes de risque / complaisance </h3>
+      <div class="meta">vert · z=+0.39 · données 2026-07</div>
+      <div class="thermo"><div class="fill" style="width:56%;background:#2e7d32"></div><span class="zlab">z=+0.39</span></div>
+      <details><summary>métriques (poids crédibilité 7.8)</summary><ul><li>Spread obligataire Baa − Aaa Moody's (pts %, depuis 1919) — bas = compression du risque de crédit</li><li>VIX (moyenne mensuelle) — très bas = complaisance</li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #2e7d32">
+      <h3>n°3 — Innovation financière / relâchement des standards de prêt </h3>
+      <div class="meta">vert · z=-0.06 · données 2026-04</div>
+      <div class="thermo"><div class="fill" style="width:49%;background:#2e7d32"></div><span class="zlab">z=-0.06</span></div>
+      <details><summary>métriques (poids crédibilité 7.7)</summary><ul><li>SLOOS — % net de banques durcissant les prêts C&I (bas/négatif = relâchement)</li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #2e7d32">
+      <h3>n°9 — Conditions monétaires accommodantes </h3>
+      <div class="meta">vert · z=-0.27 · données 2026-07</div>
+      <div class="thermo"><div class="fill" style="width:46%;background:#2e7d32"></div><span class="zlab">z=-0.27</span></div>
+      <details><summary>métriques (poids crédibilité 7.9)</summary><ul><li>Pente de la courbe 10 ans − 3 mois (pts %) — basse/inversée = danger</li><li>M2 — croissance sur 12 mois (%)</li><li>Taux réel 10 ans (TIPS, %) — bas = accommodant</li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #2e7d32">
+      <h3>n°13 — Dynamique « Ponzi » / refinancement perpétuel <span class="badge">≈ proxy approximatif</span></h3>
+      <div class="meta">vert · z=-0.67 · données 2026-01</div>
+      <div class="thermo"><div class="fill" style="width:39%;background:#2e7d32"></div><span class="zlab">z=-0.67</span></div>
+      <details><summary>métriques (poids crédibilité 7.5)</summary><ul><li>Dette des sociétés non financières (BCNSDODNS) ÷ leurs profits après impôt (NFCPATAX) — « années de profits pour rembourser la dette » (Z.1/NIPA, depuis 1947). Ratio élevé = dette qui dépasse la capacité à la servir par les résultats = dynamique Minsky « Ponzi » (dépendance au refinancement) → danger=high. Proxy ≈ mais AUTOMATIQUE et backtestable sur tous les krachs depuis ~1957. z-score insensible à l'échelle. SENS À VALIDER sur l'empreinte.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°11 — Réflexivité / boucles de rétroaction <span class="badge">≈ proxy approximatif</span></h3>
+      <div class="meta">vert · z=-0.73 · données 2026-01</div>
       <div class="thermo"><div class="fill" style="width:38%;background:#2e7d32"></div><span class="zlab">z=-0.73</span></div>
       <details><summary>métriques (poids crédibilité 7.75)</summary><ul><li>Émissions nettes d'actions des sociétés non financières (Fed Z.1) rapportées au PIB — proxy ≈ de la boucle réflexive « prix ↑ → rachats financés par dette → prix ↑ ». Fortement NÉGATIF = rachats nets massifs = boucle auto-entretenue → danger sur les valeurs basses (danger=low). SENS À VALIDER sur l'empreinte (comme signes 6/8). z-score insensible à l'échelle → ratio_gdp correct.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
-      <h3>n°13 — Dynamique « Ponzi » / refinancement perpétuel <span class="badge">≈ proxy approximatif</span></h3>
-      <div class="thermo"><div class="fill" style="width:39%;background:#2e7d32"></div><span class="zlab">z=-0.67</span></div>
-      <details><summary>métriques (poids crédibilité 7.5)</summary><ul><li>Dette des sociétés non financières (BCNSDODNS) ÷ leurs profits après impôt (NFCPATAX) — « années de profits pour rembourser la dette » (Z.1/NIPA, depuis 1947). Ratio élevé = dette qui dépasse la capacité à la servir par les résultats = dynamique Minsky « Ponzi » (dépendance au refinancement) → danger=high. Proxy ≈ mais AUTOMATIQUE et backtestable sur tous les krachs depuis ~1957. z-score insensible à l'échelle. SENS À VALIDER sur l'empreinte.</li></ul></details>
+      <h3>n°1 — Expansion excessive du crédit / levier </h3>
+      <div class="meta">vert · z=-1.53 · données 2025-10</div>
+      <div class="thermo"><div class="fill" style="width:25%;background:#2e7d32"></div><span class="zlab">z=-1.53</span></div>
+      <details><summary>métriques (poids crédibilité 8.03)</summary><ul><li>Crédit privé non financier / PIB (BIS) — écart à la tendance (gap, type BIS)</li><li>Dette sur marge FINRA — croissance sur 12 mois (%) <em>(optionnelle)</em></li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #9e9e9e">
+      <h3>n°2 — Euphorie spéculative / psychologie de foule <span class="badge">≈ proxy approximatif</span> <span class="badge badge-g">gris — hors en-tête</span></h3>
+      <div class="meta">gris · z indisponible · données —</div>
+      <div class="thermo"><span class="na">indisponible</span></div>
+      <details><summary>métriques (poids crédibilité 7.63)</summary><ul><li>Sentiment AAII — écart haussiers − baissiers (pts) <em>(optionnelle)</em></li><li>Ratio put/call actions CBOE (bas = euphorie) <em>(optionnelle)</em></li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #9e9e9e">
+      <h3>n°7 — Complaisance réglementaire / déréglementation <span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span> <span class="badge badge-g">gris — hors en-tête</span></h3>
+      <div class="meta">gris · z indisponible · données —</div>
+      <div class="thermo"><span class="na">indisponible</span></div>
+      <details><summary>métriques (poids crédibilité 8.43)</summary><ul><li>Climat de déréglementation financière — JUGEMENT (pas une mesure). Épisodes marquants : Gramm-Leach-Bliley 1999, CFMA 2000, assouplissement du net capital rule SEC 2004, détricotage Dodd-Frank. Proxy objectif possible : indice de restrictions réglementaires RegData/Mercatus (sens inversé). En attente d'un fichier data/manual/dereg_score.csv (date,value ; valeur haute = déréglementation forte = danger). <em>(optionnelle)</em></li></ul></details>
+    </div>
+    <div class="card" style="border-left:6px solid #9e9e9e">
+      <h3>n°4 — Déplacement / narratif « cette fois c'est différent » <span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span> <span class="badge badge-g">gris — hors en-tête</span></h3>
+      <div class="meta">gris · z indisponible · données —</div>
+      <div class="thermo"><span class="na">indisponible</span></div>
+      <details><summary>métriques (poids crédibilité 7.78)</summary><ul><li>Intensité du récit « cette fois c'est différent » justifiant des valorisations extrêmes — JUGEMENT (pas une mesure). Typiquement : nouvelle techno ou instrument financier (chemins de fer, dot-com, subprime/titrisation, IA). Proxy possible : fréquence média/Google Trends de la formule, ou nombre d'articles « new paradigm ». En attente d'un fichier data/manual/narrative_score.csv (date,value ; valeur haute = récit euphorique dominant = danger). <em>(optionnelle)</em></li></ul></details>
     </div>
 
 <h2>Comparaison à l'empreinte des krachs (z par signe à T−12 mois)</h2>
-<table><tr><th></th><th>1929</th><th>1937</th><th>1973-74</th><th>1987</th><th>2000</th><th>2008</th><th>2020</th><th>Aujourd'hui</th></tr><tr><td class='rowh'>n°1 Expansion excessive du crédit / levier</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-1.11</td><td style="color:#c62828">+4.15</td><td style="color:#ef6c00">+0.82</td><td style="color:#c62828">+2.36</td><td style="color:#2e7d32">-0.81</td><td class="today" style="color:#2e7d32">-1.53</td></tr><tr><td class='rowh'>n°3 Innovation financière / relâchement des standards de prêt</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-0.21</td><td style="color:#2e7d32">-0.07</td><td style="color:#2e7d32">+0.09</td><td class="today" style="color:#2e7d32">-0.06</td></tr><tr><td class='rowh'>n°5 Survalorisation / prix vs fondamentaux</td><td style="color:#c62828">+1.89</td><td style="color:#ef6c00">+0.81</td><td style="color:#ef6c00">+0.57</td><td style="color:#2e7d32">-0.32</td><td style="color:#c62828">+4.26</td><td style="color:#c62828">+1.78</td><td style="color:#c62828">+2.08</td><td class="today" style="color:#c62828">+2.86</td></tr><tr><td class='rowh'>n°9 Conditions monétaires accommodantes</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+2.54</td><td style="color:#2e7d32">+0.17</td><td style="color:#ef6c00">+0.65</td><td style="color:#2e7d32">+0.44</td><td style="color:#2e7d32">+0.26</td><td class="today" style="color:#2e7d32">-0.27</td></tr><tr><td class='rowh'>n°10 Compression des primes de risque / complaisance</td><td class="na">–</td><td style="color:#2e7d32">+0.45</td><td style="color:#2e7d32">+0.26</td><td style="color:#2e7d32">-0.12</td><td style="color:#2e7d32">+0.41</td><td style="color:#2e7d32">-0.03</td><td style="color:#2e7d32">+0.28</td><td class="today" style="color:#2e7d32">+0.39</td></tr><tr><td class='rowh'>n°6 Fragilité structurelle du système financier</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">+0.26</td><td style="color:#2e7d32">+0.38</td><td style="color:#ef6c00">+1.17</td><td style="color:#2e7d32">-0.02</td><td class="today" style="color:#2e7d32">+0.47</td></tr><tr><td class='rowh'>n°12 Surchauffe des transactions (volumes, IPO, margin)</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+2.06</td><td style="color:#2e7d32">+0.00</td><td style="color:#2e7d32">+0.09</td><td style="color:#2e7d32">-0.08</td><td style="color:#2e7d32">-0.96</td><td class="today" style="color:#ef6c00">+0.80</td></tr><tr><td class='rowh'>n°8 Déséquilibres globaux / flux de capitaux</td><td class="na">–</td><td class="na">–</td><td style="color:#ef6c00">+1.09</td><td style="color:#c62828">+3.08</td><td style="color:#c62828">+1.76</td><td style="color:#c62828">+2.04</td><td style="color:#ef6c00">+0.54</td><td class="today" style="color:#ef6c00">+0.90</td></tr><tr><td class='rowh'>n°15 Montée des inégalités / concentration des richesses</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+1.67</td><td style="color:#ef6c00">+1.38</td><td class="today" style="color:#ef6c00">+1.49</td></tr><tr><td class='rowh'>n°11 Réflexivité / boucles de rétroaction</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-0.49</td><td style="color:#c62828">+3.24</td><td style="color:#2e7d32">+0.46</td><td style="color:#c62828">+2.95</td><td style="color:#c62828">+1.79</td><td class="today" style="color:#2e7d32">-0.73</td></tr><tr><td class='rowh'>n°13 Dynamique « Ponzi » / refinancement perpétuel</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+1.67</td><td style="color:#c62828">+4.65</td><td style="color:#ef6c00">+1.20</td><td style="color:#2e7d32">-0.13</td><td style="color:#2e7d32">+0.31</td><td class="today" style="color:#2e7d32">-0.67</td></tr><tr><td class='rowh'>COMPOSITE</td><td style="color:#c62828">+1.89</td><td style="color:#ef6c00">+0.63</td><td style="color:#ef6c00">+0.82</td><td style="color:#c62828">+1.68</td><td style="color:#ef6c00">+0.97</td><td style="color:#ef6c00">+1.12</td><td style="color:#2e7d32">+0.44</td><td class="today" style="color:#2e7d32">+0.33</td></tr></table>
+<table><tr><th></th><th>1929</th><th>1937</th><th>1973-74</th><th>1987</th><th>2000</th><th>2008</th><th>2020</th><th>Aujourd'hui</th></tr><tr><td class='rowh'>n°1 Expansion excessive du crédit / levier</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-1.11</td><td style="color:#c62828">+4.15</td><td style="color:#ef6c00">+0.82</td><td style="color:#c62828">+2.36</td><td style="color:#2e7d32">-0.81</td><td class="today" style="color:#2e7d32">-1.53</td></tr><tr><td class='rowh'>n°3 Innovation financière / relâchement des standards de prêt</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-0.21</td><td style="color:#2e7d32">-0.07</td><td style="color:#2e7d32">+0.09</td><td class="today" style="color:#2e7d32">-0.06</td></tr><tr><td class='rowh'>n°5 Survalorisation / prix vs fondamentaux</td><td style="color:#c62828">+1.89</td><td style="color:#ef6c00">+0.81</td><td style="color:#ef6c00">+0.57</td><td style="color:#2e7d32">-0.32</td><td style="color:#c62828">+4.26</td><td style="color:#c62828">+1.78</td><td style="color:#c62828">+2.08</td><td class="today" style="color:#c62828">+2.86</td></tr><tr><td class='rowh'>n°9 Conditions monétaires accommodantes</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+2.54</td><td style="color:#2e7d32">+0.17</td><td style="color:#ef6c00">+0.65</td><td style="color:#2e7d32">+0.44</td><td style="color:#2e7d32">+0.26</td><td class="today" style="color:#2e7d32">-0.27</td></tr><tr><td class='rowh'>n°10 Compression des primes de risque / complaisance</td><td class="na">–</td><td style="color:#2e7d32">+0.45</td><td style="color:#2e7d32">+0.26</td><td style="color:#2e7d32">-0.12</td><td style="color:#2e7d32">+0.41</td><td style="color:#2e7d32">-0.03</td><td style="color:#2e7d32">+0.28</td><td class="today" style="color:#2e7d32">+0.39</td></tr><tr><td class='rowh'>n°6 Fragilité structurelle du système financier</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">+0.26</td><td style="color:#2e7d32">+0.38</td><td style="color:#ef6c00">+1.17</td><td style="color:#2e7d32">-0.02</td><td class="today" style="color:#2e7d32">+0.47</td></tr><tr><td class='rowh'>n°12 Surchauffe des transactions (volumes, IPO, margin)</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+1.89</td><td style="color:#2e7d32">+0.01</td><td style="color:#2e7d32">+0.09</td><td style="color:#2e7d32">-0.07</td><td style="color:#2e7d32">-0.94</td><td class="today" style="color:#ef6c00">+0.78</td></tr><tr><td class='rowh'>n°8 Déséquilibres globaux / flux de capitaux</td><td class="na">–</td><td class="na">–</td><td style="color:#ef6c00">+1.09</td><td style="color:#c62828">+3.08</td><td style="color:#c62828">+1.76</td><td style="color:#c62828">+2.04</td><td style="color:#ef6c00">+0.54</td><td class="today" style="color:#ef6c00">+0.90</td></tr><tr><td class='rowh'>n°15 Montée des inégalités / concentration des richesses</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+1.67</td><td style="color:#ef6c00">+1.38</td><td class="today" style="color:#ef6c00">+1.49</td></tr><tr><td class='rowh'>n°11 Réflexivité / boucles de rétroaction</td><td class="na">–</td><td class="na">–</td><td style="color:#2e7d32">-0.49</td><td style="color:#c62828">+3.24</td><td style="color:#2e7d32">+0.46</td><td style="color:#c62828">+2.95</td><td style="color:#c62828">+1.79</td><td class="today" style="color:#2e7d32">-0.73</td></tr><tr><td class='rowh'>n°13 Dynamique « Ponzi » / refinancement perpétuel</td><td class="na">–</td><td class="na">–</td><td style="color:#c62828">+1.67</td><td style="color:#c62828">+4.65</td><td style="color:#ef6c00">+1.20</td><td style="color:#2e7d32">-0.13</td><td style="color:#2e7d32">+0.31</td><td class="today" style="color:#2e7d32">-0.67</td></tr><tr><td class='rowh'>PIRE SIGNE (z max)</td><td style="color:#c62828">+1.89</td><td style="color:#ef6c00">+0.81</td><td style="color:#c62828">+2.54</td><td style="color:#c62828">+4.65</td><td style="color:#c62828">+4.26</td><td style="color:#c62828">+2.95</td><td style="color:#c62828">+2.08</td><td class="today" style="color:#c62828">+2.86</td></tr><tr><td class='rowh'>moyenne indicative</td><td style="color:#c62828">+1.89</td><td style="color:#ef6c00">+0.63</td><td style="color:#ef6c00">+0.80</td><td style="color:#c62828">+1.68</td><td style="color:#ef6c00">+0.97</td><td style="color:#ef6c00">+1.12</td><td style="color:#2e7d32">+0.44</td><td class="today" style="color:#2e7d32">+0.33</td></tr></table>
 <div class="legend">« – » : série trop récente pour couvrir ce krach (la plupart des
 séries publiques démarrent après 1945, voire 1990).</div>
 
 <div class="warn" style="margin-top:18px"><b>Notes d'honnêteté (à ne jamais retirer)</b><br>
 · Instrument d'analyse et de pédagogie — <b>pas</b> un signal de trading, aucune prétention sur le <i>timing</i>.<br>
+· L'en-tête « pire signe » est volontairement plus sensible que l'ancienne moyenne :
+plus d'alertes = plus de faux positifs. C'est le prix de la non-dilution.<br>
 · Signe n°2 marqué « ≈ » : proxies imparfaits de la psychologie de foule.<br>
-· Signes « ⚠ qualitatif » (ex. n°7 déréglementation) : jugement, PAS une mesure — gris et hors composite tant qu'aucune évaluation manuelle n'est fournie.<br>
+· Signes « ⚠ qualitatif » (ex. n°7 déréglementation) : jugement, PAS une mesure — gris et hors en-tête tant qu'aucune évaluation manuelle n'est fournie.<br>
 · Calibration sur les seuls krachs survenus → biais de survie ; le vrai taux de faux positifs est inconnu et probablement élevé.<br>
 · Le déclencheur (signe 16) est par nature non mesurable : l'outil suit la fragilité accumulée, pas l'étincelle.</div>
 

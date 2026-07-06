@@ -398,10 +398,53 @@ def couleur(z: float, seuils: dict) -> str:
     return "rouge"
 
 
+def agreger_signes(sdf: pd.DataFrame, weights: dict, seuils: dict) -> pd.DataFrame:
+    """Agrégation NON DILUANTE (tâche 1). L'en-tête est piloté par le PIRE
+    signe (z orienté max) + les comptes de signes orange/rouge — plus par la
+    moyenne, qui masque les extrêmes (ex. 06/07/2026 : survalorisation +2,86
+    noyée dans un composite « vert » à +0,33).
+
+    La moyenne pondérée crédibilité est CONSERVÉE mais rétrogradée en
+    information secondaire sous le nom `moyenne_indicative`.
+
+    Chemin de code UNIQUE calibration / live (§7 du brief).
+
+    sdf     : lignes = dates, colonnes = clés de signes, valeurs = z orienté
+              (NaN = signe gris / périmé / sans donnée → exclu ligne à ligne).
+    weights : {clé de signe: poids crédibilité} (config.yaml).
+    Retour  : DataFrame indexé comme sdf avec les colonnes
+              pire_z, pire_signe, n_orange, n_rouge, couleur_entete,
+              moyenne_indicative, couverture.
+    """
+    w = pd.Series(weights, dtype=float)
+    s = sdf[[c for c in sdf.columns if c in w.index]]
+
+    avail = s.notna()
+    wsum = avail.mul(w[s.columns], axis=1).sum(axis=1)
+    moyenne = s.mul(w[s.columns], axis=1).sum(axis=1, min_count=1) / wsum.replace(0, np.nan)
+
+    pire_z = s.max(axis=1)
+    pire_signe = pd.Series(index=s.index, dtype=object)
+    mask = pire_z.notna()
+    if mask.any():
+        pire_signe[mask] = s[mask].idxmax(axis=1)
+
+    return pd.DataFrame({
+        "pire_z": pire_z,
+        "pire_signe": pire_signe,
+        "n_orange": ((s >= seuils["vert"]) & (s < seuils["orange"])).sum(axis=1),
+        "n_rouge": (s >= seuils["orange"]).sum(axis=1),
+        "couleur_entete": pire_z.apply(lambda z: couleur(z, seuils)),
+        "moyenne_indicative": moyenne,
+        "couverture": wsum / w.sum(),
+    })
+
+
 # ------------------------------------------------------------------- le panel
 def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dict:
     """Construit le panel mensuel complet : z par métrique, score par signe,
-    composite pondéré crédibilité. Chemin de code UNIQUE calibration/live."""
+    agrégation non diluante (pire signe + comptes + moyenne indicative).
+    Chemin de code UNIQUE calibration/live."""
     norm = cfg["normalisation"]
     default_min = int(norm.get("min_hist_months", 120))
 
@@ -449,18 +492,16 @@ def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dic
             weights[sign["key"]] = float(sign["poids"])
     sdf = pd.DataFrame(sign_scores)
 
-    w = pd.Series(weights)
-    avail = sdf.notna()
-    weight_sum = avail.mul(w, axis=1).sum(axis=1)
-    composite = sdf.mul(w, axis=1).sum(axis=1, min_count=1) / weight_sum.replace(0, np.nan)
-    coverage = weight_sum / w.sum()
+    # En-tête non diluant + moyenne indicative — un seul chemin de code.
+    agreg = agreger_signes(sdf, weights, norm["seuils"])
 
     return {
         "metric_z": zdf,
         "metric_val": vdf,
         "sign_scores": sdf,
-        "composite": composite,
-        "coverage": coverage,
+        "agreg": agreg,                                # pire_z, pire_signe, n_*, ...
+        "moyenne_indicative": agreg["moyenne_indicative"],  # ex-« composite »
+        "coverage": agreg["couverture"],
         "weights": weights,
         "indisponibles": indispo,
     }
