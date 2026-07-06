@@ -94,11 +94,20 @@ def main() -> int:
     n_o = int(_f(r.get("n_orange"))) if r.get("n_orange") == r.get("n_orange") else 0
     n_r = int(_f(r.get("n_rouge"))) if r.get("n_rouge") == r.get("n_rouge") else 0
 
-    # Calibration (point 6) : comptes orange/rouge à T-12 de chaque krach,
+    # Calibration (tâche 4 pt 3) : en FRACTION des signes mesurables, pas en
+    # compte brut — les krachs anciens n'avaient que 2-3 séries. Comptes à T-12
     # recomptés depuis l'empreinte via agreger_signes (chemin de code commun).
     poids = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
+    sign_keys = [s["key"] for s in cfg["signes"]]
     ag_k = agreger_signes(fp.T.apply(pd.to_numeric, errors="coerce"), poids, seuils)
-    med_r, med_o = float(ag_k["n_rouge"].median()), float(ag_k["n_orange"].median())
+    fp_signes = fp.loc[[i for i in fp.index if i in sign_keys]].apply(
+        pd.to_numeric, errors="coerce")
+    mes_k = fp_signes.notna().sum(axis=0)              # signes mesurables par krach
+    frac_r = (ag_k["n_rouge"] / mes_k).dropna()
+    frac_o = (ag_k["n_orange"] / mes_k).dropna()
+    # aujourd'hui : signes non gris (à jour) d'après le journal
+    mes_now = sum(1 for k in sign_keys
+                  if str(r.get(f"couleur_{k}", "")) in ("vert", "orange", "rouge"))
 
     # Compteur de faux positifs live : couleur d'en-tête (repli : ancienne colonne).
     ce = j["couleur_entete"] if "couleur_entete" in j.columns else pd.Series(dtype=str)
@@ -130,6 +139,12 @@ def main() -> int:
             badge = '<span class="badge">≈ proxy approximatif</span>'
         else:
             badge = ""
+        # Étage d'historique (tâche 4) : A backtestable 7/7, B post-1945, C récent
+        et = sign.get("etage")
+        if et:
+            badge += f' <span class="badge badge-e">étage {et}</span>'
+        else:
+            badge += ' <span class="badge badge-g">hors étage — sans données</span>'
         if c == "gris":
             badge += ' <span class="badge badge-g">gris — hors en-tête</span>'
         # Drapeaux de fiabilité issus de la re-pondération NSR (config.yaml)
@@ -206,6 +221,7 @@ def main() -> int:
         font-size:.72em;padding:1px 8px;vertical-align:middle}}
  .badge-q{{background:#ede7f6;color:#4527a0;border-color:#b39ddb}}
  .badge-g{{background:#eceff1;color:#546e7a;border-color:#b0bec5}}
+ .badge-e{{background:#e3f2fd;color:#1565c0;border-color:#90caf9;font-weight:600}}
  .thermo{{position:relative;background:#eceff1;height:22px;border-radius:11px;overflow:hidden}}
  .fill{{height:100%}} .zlab{{position:absolute;top:2px;left:10px;font-size:.8em;color:#263238}}
  .na{{color:#90a4ae;font-style:italic}}
@@ -226,9 +242,11 @@ couverture pondérée {_f(r.get('couverture')):.0%}</div>
   <div class="big">{cc.upper()} — pire signe : {noms.get(pire_k, pire_k or '?')} &nbsp;z = {zp:+.2f}</div>
   <div class="counts"><b>{n_r}</b> rouge / <b>{n_o}</b> orange
   (sur les signes à jour, seuils : orange ≥ {seuils['vert']}, rouge ≥ {seuils['orange']})</div>
-  <div class="calib">calibration : à T−12 des {len(fp.columns)} krachs de référence, médiane
-  <b>{med_r:g}</b> rouge / <b>{med_o:g}</b> orange (min–max rouge {int(ag_k['n_rouge'].min())}–{int(ag_k['n_rouge'].max())} ;
-  sur les signes mesurables à l'époque : les krachs anciens en comptent peu)</div>
+  <div class="calib">calibration : aujourd'hui <b>{n_r} rouge / {mes_now} signes mesurables
+  ({n_r / mes_now if mes_now else float('nan'):.0%})</b> et {n_o} orange ({n_o / mes_now if mes_now else float('nan'):.0%})
+  — à T−12 des {len(fp.columns)} krachs : médiane rouge <b>{frac_r.median():.0%}</b>
+  (min–max {frac_r.min():.0%}–{frac_r.max():.0%}), médiane orange {frac_o.median():.0%}
+  (fractions des signes mesurables à CHAQUE époque : {int(mes_k.min())} en {mes_k.idxmin()}, {int(mes_k.max())} en {mes_k.idxmax()})</div>
   <div class="moy">moyenne indicative (pondérée crédibilité, ex-« composite » — dilue les
   extrêmes, ne pilote plus l'en-tête) : z = {zm:+.2f} ({couleur(zm, seuils)}) —
   compteur de faux positifs live : <b>{n_rouge_hist}</b> en-tête(s) rouge(s) sans krach constaté</div>
