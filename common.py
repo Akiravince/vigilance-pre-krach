@@ -365,7 +365,12 @@ def apply_transform(raw: pd.Series, transform: str, gdp: pd.Series | None = None
         return to_monthly(raw)
     if transform == "yoy_pct":
         m = to_monthly(raw)
-        return (m.pct_change(12) * 100).dropna()
+        # fill_method=None EXPLICITE (run de reproductibilite du 2026-07-06) :
+        # le defaut de pct_change depend de la version de pandas (pad en <=2.x,
+        # None en >=3.x). Sur une serie a trous (ex. BOGZ1FL663067003Q,
+        # 1946-51), pad fabrique des yoy sur donnees perimees et decalait
+        # z_surchauffe de 0.802 a 0.781 selon l'environnement. None = correct.
+        return (m.pct_change(12, fill_method=None) * 100).dropna()
     if transform == "hp_gap":
         return to_monthly(one_sided_hp_gap(raw))
     if transform == "ratio_gdp":
