@@ -76,6 +76,7 @@ def main() -> int:
         badge = '<span class="badge">≈ proxy approximatif</span>' if sign.get("approximatif") else ""
         mets = "".join(
             f'<li>{m["description"]}'
+            + (' <span class="badge">≈</span>' if m.get("approximatif") else "")
             + (' <em>(optionnelle)</em>' if m.get("optional") else "")
             + "</li>"
             for m in sign["metrics"]
@@ -143,7 +144,7 @@ couverture pondérée {float(r['couverture']):.0%}</div>
   {sparkline(comp_hist)}
 </div>
 
-<h2>Les 6 signes du MVP</h2>
+<h2>Les {len(cfg['signes'])} signes suivis</h2>
 {''.join(cards)}
 
 <h2>Comparaison à l'empreinte des krachs (z par signe à T−12 mois)</h2>

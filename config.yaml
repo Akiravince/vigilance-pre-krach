@@ -163,3 +163,40 @@ signes:
         series: VIXCLS
         transform: level
         danger: low
+
+  # ---------------------------------------------------------------------------
+  # Phase 6 — extension au-delà du MVP. Signes les mieux MESURABLES d'abord.
+  # ---------------------------------------------------------------------------
+  - key: fragilite
+    numero: 6
+    nom: "Fragilité structurelle du système financier"
+    poids: 8.75
+    approximatif: false
+    metrics:
+      - key: nfci_leverage
+        description: "Sous-indice « levier » du NFCI (Chicago Fed, hebdo depuis 1971) — mesures de dette et de fonds propres du système financier. Sens fixé par l'EMPREINTE (calibrate 2026-07) : z BRUT positif à T-12 avant les krachs (2008 = +1,17, le plus fort) → danger=high. La convention Chicago Fed (positif = conditions plus tendues) suggérait low, mais l'empreinte l'infirme (low = vert avant TOUS les krachs). Signal faible hors 2008 (couverture 1971→, 4 krachs seulement)."
+        source: fred
+        series: NFCILEVERAGE
+        transform: level
+        danger: high
+
+  - key: surchauffe
+    numero: 12
+    nom: "Surchauffe des transactions (volumes, IPO, margin)"
+    poids: 7.63
+    approximatif: false
+    metrics:
+      - key: margin_loans_z1
+        description: "Prêts sur marge / créances clients dues aux courtiers (Fed Z.1, trimestriel depuis 1945) — croissance sur 12 mois (%). Forte accélération = surchauffe (ex. 1929, 2000, 2021)."
+        source: fred
+        series: BOGZ1FL663067003Q
+        transform: yoy_pct
+        danger: high
+      - key: ipo_volume
+        description: "Volume d'introductions en bourse (IPO) — croissance 12 mois. Proxy APPROXIMATIF de surchauffe du marché primaire."
+        source: manual
+        series: ipo_volume
+        transform: yoy_pct
+        danger: high
+        optional: true
+        approximatif: true   # métrique ≈ : fichier manuel data/manual/ipo_volume.csv

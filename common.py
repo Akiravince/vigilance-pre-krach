@@ -310,6 +310,12 @@ def get_series(name: str, source: str, offline: bool = False) -> pd.Series:
             s = fetch_putcall()
         elif source == "finra":
             s = fetch_margin_debt()
+        elif source == "manual":
+            # source générique fichier manuel — sert aux métriques ≈/qualitatives
+            # (signes 4, 7, 8, 11, 13-16). Dépose data/manual/{name}.csv (date,value).
+            s = _manual_or_fail(
+                name, f"Déposer data/manual/{name}.csv (colonnes: date,value)."
+            )
         else:
             raise RuntimeError(f"Source inconnue : {source}")
         CACHE.mkdir(parents=True, exist_ok=True)
