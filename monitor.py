@@ -87,6 +87,20 @@ def main() -> int:
                couleur_entete=cc,
                moyenne_indicative=round(zm, 3) if zm == zm else "")
 
+    # Socles d'empreinte (tâche 4 pt 4) : mêmes agrégats sur A+B et A seul.
+    et = {s["key"]: s.get("etage") for s in cfg["signes"]}
+    rel_ab = {k: v for k, v in releve.items() if et.get(k) in ("A", "B")}
+    rel_a = {k: v for k, v in releve.items() if et.get(k) == "A"}
+    for suf, rel in (("socle_ab", rel_ab), ("socle_a", rel_a)):
+        if rel:
+            a = agreger_signes(pd.DataFrame(rel, index=[today]),
+                               {k: poids[k] for k in rel}, seuils).iloc[0]
+            row[f"z_pire_{suf}"] = round(float(a["pire_z"]), 3)
+            if suf == "socle_ab":
+                row["moyenne_socle_ab"] = round(float(a["moyenne_indicative"]), 3)
+        else:
+            row[f"z_pire_{suf}"] = ""
+
     print("-" * 78)
     print(f"  EN-TETE : {cc.upper()} — pire signe : {noms.get(pire_k, pire_k)} "
           f"z={zp:+.2f} — {int(ag['n_rouge'])} rouge / {int(ag['n_orange'])} orange")

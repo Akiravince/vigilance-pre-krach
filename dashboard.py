@@ -184,8 +184,14 @@ def main() -> int:
     row_labels = {s["key"]: f"n°{s['numero']} {s['nom']}" for s in cfg["signes"]}
     row_labels.update({"pire_z": "PIRE SIGNE (z max)",
                        "moyenne_indicative": "moyenne indicative",
-                       "composite": "moyenne indicative (ex-composite)"})
-    today_val = {"pire_z": zp, "moyenne_indicative": zm, "composite": zm}
+                       "composite": "moyenne indicative (ex-composite)",
+                       "pire_z_socle_ab": "PIRE SIGNE — socle A+B (9 signes comparables post-1945)",
+                       "moyenne_socle_ab": "moyenne — socle A+B",
+                       "pire_z_socle_a": "PIRE SIGNE — socle A seul (2 signes, voit 1929/1937)"})
+    today_val = {"pire_z": zp, "moyenne_indicative": zm, "composite": zm,
+                 "pire_z_socle_ab": _f(r.get("z_pire_socle_ab")),
+                 "moyenne_socle_ab": _f(r.get("moyenne_socle_ab")),
+                 "pire_z_socle_a": _f(r.get("z_pire_socle_a"))}
     head = "".join(f"<th>{c}</th>" for c in fp.columns)
     body = []
     for idx, row_fp in fp.iterrows():

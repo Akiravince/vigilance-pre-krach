@@ -22,8 +22,8 @@ import sys
 
 import pandas as pd
 
-from common import (DATA, OUT, compute_panel, faux_positifs_par_signe,
-                    load_config, pouvoir_predictif)
+from common import (DATA, OUT, agreger_signes, compute_panel,
+                    faux_positifs_par_signe, load_config, pouvoir_predictif)
 
 
 def main() -> int:
@@ -47,7 +47,17 @@ def main() -> int:
     out_hist.to_csv(hist / "composite.csv", index_label="date")
 
     # ---------------------------------------------- empreinte T-12 mois
+    # Variante « socle » (tâche 4 pt 4) : agrégats calculés UNIQUEMENT sur les
+    # étages A+B (comparables sur les 5 krachs post-1945) et A seul (1929/1937),
+    # via agreger_signes — même chemin de code, étage = métadonnée config.
     sdf, zdf = p["sign_scores"], p["metric_z"]
+    seuils = cfg["normalisation"]["seuils"]
+    poids_cfg = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
+    et = {s["key"]: s.get("etage") for s in cfg["signes"]}
+    keys_ab = [k for k in sdf.columns if et.get(k) in ("A", "B")]
+    keys_a = [k for k in sdf.columns if et.get(k) == "A"]
+    ag_ab = agreger_signes(sdf[keys_ab], {k: poids_cfg[k] for k in keys_ab}, seuils)
+    ag_a = agreger_signes(sdf[keys_a], {k: poids_cfg[k] for k in keys_a}, seuils)
     rows_s, rows_m = {}, {}
     for k in cfg["krachs"]:
         t12 = pd.Timestamp(k["date"]) - pd.DateOffset(months=12)
@@ -56,6 +66,9 @@ def main() -> int:
         rows_m[k["nom"]] = zdf.apply(lambda c: c.asof(t12))
         rows_s[k["nom"]]["pire_z"] = ag["pire_z"].asof(t12)
         rows_s[k["nom"]]["moyenne_indicative"] = ag["moyenne_indicative"].asof(t12)
+        rows_s[k["nom"]]["pire_z_socle_ab"] = ag_ab["pire_z"].asof(t12)
+        rows_s[k["nom"]]["moyenne_socle_ab"] = ag_ab["moyenne_indicative"].asof(t12)
+        rows_s[k["nom"]]["pire_z_socle_a"] = ag_a["pire_z"].asof(t12)
     fp_s = pd.DataFrame(rows_s)
     fp_m = pd.DataFrame(rows_m)
     OUT.mkdir(exist_ok=True)
@@ -66,7 +79,6 @@ def main() -> int:
     print(fp_s.round(2).to_string())
 
     # ------------------------- faux positifs PAR SIGNE (tache 1, point 5)
-    seuils = cfg["normalisation"]["seuils"]
     fpx = faux_positifs_par_signe(sdf, cfg["krachs"], seuils)
     fpx.to_csv(OUT / "faux_positifs_signes.csv", index_label="signe")
     print("\nFaux positifs par signe (mois >= orange sans krach sous 24 mois ;")
