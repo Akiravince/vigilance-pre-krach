@@ -22,7 +22,7 @@ import sys
 
 import pandas as pd
 
-from common import DATA, OUT, compute_panel, load_config
+from common import DATA, OUT, compute_panel, faux_positifs_par_signe, load_config
 
 
 def main() -> int:
@@ -64,10 +64,19 @@ def main() -> int:
     print("\nEmpreinte (score par signe, z oriente, a T-12 mois de chaque krach) :")
     print(fp_s.round(2).to_string())
 
+    # ------------------------- faux positifs PAR SIGNE (tache 1, point 5)
+    seuils = cfg["normalisation"]["seuils"]
+    fpx = faux_positifs_par_signe(sdf, cfg["krachs"], seuils)
+    fpx.to_csv(OUT / "faux_positifs_signes.csv", index_label="signe")
+    print("\nFaux positifs par signe (mois >= orange sans krach sous 24 mois ;")
+    print("les ~24 derniers mois, non confirmables, comptent en faux positifs) :")
+    aff = fpx.copy()
+    aff["taux_faux"] = (aff["taux_faux"].astype(float) * 100).round(0)
+    print(aff.to_string())
+
     # ---------------------------------------------- backtest anti-illusion
     # Depuis la tâche 1, « rouge » = couleur d'EN-TÊTE (pire signe >= seuil),
     # plus la moyenne : le compte de mois rouges augmente mécaniquement.
-    seuils = cfg["normalisation"]["seuils"]
     pire_v = ag["pire_z"].dropna()
     rouges = pire_v[pire_v >= seuils["orange"]]
     moy_v = ag["moyenne_indicative"].dropna()

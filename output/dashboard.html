@@ -9,6 +9,7 @@
         box-shadow:0 1px 3px rgba(0,0,0,.12);border-left:8px solid #c62828}
  .gauge .big{font-size:1.6em;font-weight:700;color:#c62828}
  .gauge .counts{font-size:1.1em;margin-top:4px}
+ .gauge .calib{color:#455a64;font-size:.9em;margin-top:6px}
  .gauge .moy{color:#78909c;font-size:.85em;margin-top:8px}
  .card{background:#fff;border-radius:8px;padding:12px 16px;margin:10px 0;
        box-shadow:0 1px 2px rgba(0,0,0,.10)}
@@ -38,6 +39,9 @@ couverture pondérée 79%</div>
   <div class="big">ROUGE — pire signe : Survalorisation / prix vs fondamentaux &nbsp;z = +2.86</div>
   <div class="counts"><b>1</b> rouge / <b>3</b> orange
   (sur les signes à jour, seuils : orange ≥ 0.5, rouge ≥ 1.5)</div>
+  <div class="calib">calibration : à T−12 des 7 krachs de référence, médiane
+  <b>2</b> rouge / <b>1</b> orange (min–max rouge 0–5 ;
+  sur les signes mesurables à l'époque : les krachs anciens en comptent peu)</div>
   <div class="moy">moyenne indicative (pondérée crédibilité, ex-« composite » — dilue les
   extrêmes, ne pilote plus l'en-tête) : z = +0.33 (vert) —
   compteur de faux positifs live : <b>1</b> en-tête(s) rouge(s) sans krach constaté</div>
@@ -45,70 +49,74 @@ couverture pondérée 79%</div>
 </div>
 
 <h2>Scorecard des 14 signes — triés par z décroissant</h2>
+<div class="legend">Taux de faux positifs par signe : part des mois ≥ orange (z ≥ 0.5)
+non suivis d'un krach listé sous 24 mois, sur tout l'historique du signe — un taux élevé
+signale un indicateur chroniquement bruyant. Les ~24 derniers mois, non encore confirmables,
+comptent en faux positifs.</div>
 
     <div class="card" style="border-left:6px solid #c62828">
       <h3>n°5 — Survalorisation / prix vs fondamentaux </h3>
-      <div class="meta">rouge · z=+2.86 · données 2026-07</div>
+      <div class="meta">rouge · z=+2.86 · données 2026-07 · faux positifs : <b>83%</b> (630/761 mois ≥ orange depuis 1890)</div>
       <div class="thermo"><div class="fill" style="width:98%;background:#c62828"></div><span class="zlab">z=+2.86</span></div>
       <details><summary>métriques (poids crédibilité 7.44)</summary><ul><li>CAPE de Shiller (P/E ajusté du cycle, depuis 1871)</li><li>« Indicateur Buffett » : actions sociétés non financières (Z.1) / PIB (%) — remplace Wilshire/PIB (série retirée de FRED)</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #ef6c00">
       <h3>n°15 — Montée des inégalités / concentration des richesses </h3>
-      <div class="meta">orange · z=+1.49 · données 2026-01</div>
+      <div class="meta">orange · z=+1.49 · données 2026-01 · faux positifs : <b>79%</b> (224/284 mois ≥ orange depuis 1999)</div>
       <div class="thermo"><div class="fill" style="width:75%;background:#ef6c00"></div><span class="zlab">z=+1.49</span></div>
       <details><summary>métriques (poids crédibilité 8.33)</summary><ul><li>Part du patrimoine net détenue par le top 1 % (Distributional Financial Accounts de la Fed, trimestriel depuis 1989) — concentration croissante = danger.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #ef6c00">
       <h3>n°8 — Déséquilibres globaux / flux de capitaux </h3>
-      <div class="meta">orange · z=+0.90 · données 2026-01</div>
+      <div class="meta">orange · z=+0.90 · données 2026-01 · faux positifs : <b>80%</b> (436/544 mois ≥ orange depuis 1956)</div>
       <div class="thermo"><div class="fill" style="width:65%;background:#ef6c00"></div><span class="zlab">z=+0.90</span></div>
       <details><summary>métriques (poids crédibilité 8.5)</summary><ul><li>Balance courante US (base NIPA, NETFI) rapportée au PIB — un déficit qui se creuse (valeur basse) = entrées de capitaux / déséquilibre externe = danger. SENS À VALIDER sur l'empreinte (comme le signe 6). Le z-score étant insensible à l'échelle, ratio_gdp reste correct malgré l'unité NIPA.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #ef6c00">
       <h3>n°12 — Surchauffe des transactions (volumes, IPO, margin) </h3>
-      <div class="meta">orange · z=+0.78 · données 2026-01</div>
+      <div class="meta">orange · z=+0.78 · données 2026-01 · faux positifs : <b>77%</b> (178/232 mois ≥ orange depuis 1956)</div>
       <div class="thermo"><div class="fill" style="width:63%;background:#ef6c00"></div><span class="zlab">z=+0.78</span></div>
       <details><summary>métriques (poids crédibilité 7.63)</summary><ul><li>Prêts sur marge / créances clients dues aux courtiers (Fed Z.1, trimestriel depuis 1945) — croissance sur 12 mois (%). Forte accélération = surchauffe (ex. 1929, 2000, 2021).</li><li>Volume d'introductions en bourse (IPO) — croissance 12 mois. Proxy APPROXIMATIF de surchauffe du marché primaire. <span class="badge">≈</span> <em>(optionnelle)</em></li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°6 — Fragilité structurelle du système financier </h3>
-      <div class="meta">vert · z=+0.47 · données 2026-06</div>
+      <div class="meta">vert · z=+0.47 · données 2026-06 · faux positifs : <b>61%</b> (44/72 mois ≥ orange depuis 1980)</div>
       <div class="thermo"><div class="fill" style="width:58%;background:#2e7d32"></div><span class="zlab">z=+0.47</span></div>
       <details><summary>métriques (poids crédibilité 8.75)</summary><ul><li>Sous-indice « levier » du NFCI (Chicago Fed, hebdo depuis 1971) — mesures de dette et de fonds propres du système financier. Sens fixé par l'EMPREINTE (calibrate 2026-07) : z BRUT positif à T-12 avant les krachs (2008 = +1,17, le plus fort) → danger=high. La convention Chicago Fed (positif = conditions plus tendues) suggérait low, mais l'empreinte l'infirme (low = vert avant TOUS les krachs). Signal faible hors 2008 (couverture 1971→, 4 krachs seulement).</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°10 — Compression des primes de risque / complaisance </h3>
-      <div class="meta">vert · z=+0.39 · données 2026-07</div>
+      <div class="meta">vert · z=+0.39 · données 2026-07 · faux positifs : <b>91%</b> (546/600 mois ≥ orange depuis 1928)</div>
       <div class="thermo"><div class="fill" style="width:56%;background:#2e7d32"></div><span class="zlab">z=+0.39</span></div>
       <details><summary>métriques (poids crédibilité 7.8)</summary><ul><li>Spread obligataire Baa − Aaa Moody's (pts %, depuis 1919) — bas = compression du risque de crédit</li><li>VIX (moyenne mensuelle) — très bas = complaisance</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°3 — Innovation financière / relâchement des standards de prêt </h3>
-      <div class="meta">vert · z=-0.06 · données 2026-04</div>
+      <div class="meta">vert · z=-0.06 · données 2026-04 · faux positifs : <b>91%</b> (127/139 mois ≥ orange depuis 1995)</div>
       <div class="thermo"><div class="fill" style="width:49%;background:#2e7d32"></div><span class="zlab">z=-0.06</span></div>
       <details><summary>métriques (poids crédibilité 7.7)</summary><ul><li>SLOOS — % net de banques durcissant les prêts C&I (bas/négatif = relâchement)</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°9 — Conditions monétaires accommodantes </h3>
-      <div class="meta">vert · z=-0.27 · données 2026-07</div>
+      <div class="meta">vert · z=-0.27 · données 2026-07 · faux positifs : <b>66%</b> (122/185 mois ≥ orange depuis 1969)</div>
       <div class="thermo"><div class="fill" style="width:46%;background:#2e7d32"></div><span class="zlab">z=-0.27</span></div>
       <details><summary>métriques (poids crédibilité 7.9)</summary><ul><li>Pente de la courbe 10 ans − 3 mois (pts %) — basse/inversée = danger</li><li>M2 — croissance sur 12 mois (%)</li><li>Taux réel 10 ans (TIPS, %) — bas = accommodant</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°13 — Dynamique « Ponzi » / refinancement perpétuel <span class="badge">≈ proxy approximatif</span></h3>
-      <div class="meta">vert · z=-0.67 · données 2026-01</div>
+      <div class="meta">vert · z=-0.67 · données 2026-01 · faux positifs : <b>83%</b> (356/431 mois ≥ orange depuis 1957)</div>
       <div class="thermo"><div class="fill" style="width:39%;background:#2e7d32"></div><span class="zlab">z=-0.67</span></div>
       <details><summary>métriques (poids crédibilité 7.5)</summary><ul><li>Dette des sociétés non financières (BCNSDODNS) ÷ leurs profits après impôt (NFCPATAX) — « années de profits pour rembourser la dette » (Z.1/NIPA, depuis 1947). Ratio élevé = dette qui dépasse la capacité à la servir par les résultats = dynamique Minsky « Ponzi » (dépendance au refinancement) → danger=high. Proxy ≈ mais AUTOMATIQUE et backtestable sur tous les krachs depuis ~1957. z-score insensible à l'échelle. SENS À VALIDER sur l'empreinte.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°11 — Réflexivité / boucles de rétroaction <span class="badge">≈ proxy approximatif</span></h3>
-      <div class="meta">vert · z=-0.73 · données 2026-01</div>
+      <div class="meta">vert · z=-0.73 · données 2026-01 · faux positifs : <b>83%</b> (423/511 mois ≥ orange depuis 1959)</div>
       <div class="thermo"><div class="fill" style="width:38%;background:#2e7d32"></div><span class="zlab">z=-0.73</span></div>
       <details><summary>métriques (poids crédibilité 7.75)</summary><ul><li>Émissions nettes d'actions des sociétés non financières (Fed Z.1) rapportées au PIB — proxy ≈ de la boucle réflexive « prix ↑ → rachats financés par dette → prix ↑ ». Fortement NÉGATIF = rachats nets massifs = boucle auto-entretenue → danger sur les valeurs basses (danger=low). SENS À VALIDER sur l'empreinte (comme signes 6/8). z-score insensible à l'échelle → ratio_gdp correct.</li></ul></details>
     </div>
     <div class="card" style="border-left:6px solid #2e7d32">
       <h3>n°1 — Expansion excessive du crédit / levier </h3>
-      <div class="meta">vert · z=-1.53 · données 2025-10</div>
+      <div class="meta">vert · z=-1.53 · données 2025-10 · faux positifs : <b>71%</b> (163/231 mois ≥ orange depuis 1967)</div>
       <div class="thermo"><div class="fill" style="width:25%;background:#2e7d32"></div><span class="zlab">z=-1.53</span></div>
       <details><summary>métriques (poids crédibilité 8.03)</summary><ul><li>Crédit privé non financier / PIB (BIS) — écart à la tendance (gap, type BIS)</li><li>Dette sur marge FINRA — croissance sur 12 mois (%) <em>(optionnelle)</em></li></ul></details>
     </div>

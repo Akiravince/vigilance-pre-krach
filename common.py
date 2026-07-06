@@ -440,6 +440,36 @@ def agreger_signes(sdf: pd.DataFrame, weights: dict, seuils: dict) -> pd.DataFra
     })
 
 
+def faux_positifs_par_signe(sdf: pd.DataFrame, krachs: list, seuils: dict,
+                            fenetre_jours: int = 731) -> pd.DataFrame:
+    """Taux de faux positifs PROPRE à chaque signe (tâche 1, point 5) : mois où
+    le signe est AU MOINS orange (z >= seuils['vert']) NON suivis d'un krach
+    listé dans les `fenetre_jours` (~24 mois) suivants. Sert à repérer les
+    signaux chroniquement bruyants.
+
+    Limite assumée (comme le backtest d'en-tête) : les alertes des ~24 derniers
+    mois ne peuvent pas encore être confirmées → comptées en faux positifs.
+
+    sdf : lignes = dates, colonnes = signes (ou métriques), valeurs = z orienté.
+    Retour : DataFrame indexé par colonne de sdf : n_alertes, n_faux,
+             taux_faux (NaN si aucune alerte), debut, fin.
+    """
+    crash_dates = [pd.Timestamp(k["date"]) for k in krachs]
+    rows = {}
+    for col in sdf.columns:
+        v = sdf[col].dropna()
+        if v.empty:
+            continue
+        alertes = v[v >= seuils["vert"]]
+        vrais = sum(any(0 <= (c - d).days <= fenetre_jours for c in crash_dates)
+                    for d in alertes.index)
+        n = len(alertes)
+        rows[col] = {"n_alertes": n, "n_faux": n - vrais,
+                     "taux_faux": (n - vrais) / n if n else float("nan"),
+                     "debut": v.index[0], "fin": v.index[-1]}
+    return pd.DataFrame(rows).T
+
+
 # ------------------------------------------------------------------- le panel
 def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dict:
     """Construit le panel mensuel complet : z par métrique, score par signe,

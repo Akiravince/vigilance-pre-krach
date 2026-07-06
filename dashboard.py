@@ -15,7 +15,7 @@ import sys
 
 import pandas as pd
 
-from common import DATA, OUT, couleur, load_config
+from common import DATA, OUT, agreger_signes, couleur, load_config
 
 COL = {"vert": "#2e7d32", "orange": "#ef6c00", "rouge": "#c62828", "gris": "#9e9e9e"}
 
@@ -79,6 +79,8 @@ def main() -> int:
     r = j.iloc[-1]
 
     fp = pd.read_csv(OUT / "footprint_signes.csv", index_col=0)
+    fpxf = OUT / "faux_positifs_signes.csv"
+    fpx = pd.read_csv(fpxf, index_col=0) if fpxf.exists() else None
     hist = pd.read_csv(DATA / "history" / "composite.csv", index_col=0, parse_dates=True)
     pire_hist = hist["pire_z"] if "pire_z" in hist.columns else hist["composite"]
     moy_hist = hist.get("moyenne_indicative", hist["composite"])
@@ -91,6 +93,12 @@ def main() -> int:
     cc = str(r.get("couleur_entete") or couleur(zp, seuils))
     n_o = int(_f(r.get("n_orange"))) if r.get("n_orange") == r.get("n_orange") else 0
     n_r = int(_f(r.get("n_rouge"))) if r.get("n_rouge") == r.get("n_rouge") else 0
+
+    # Calibration (point 6) : comptes orange/rouge à T-12 de chaque krach,
+    # recomptés depuis l'empreinte via agreger_signes (chemin de code commun).
+    poids = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
+    ag_k = agreger_signes(fp.T.apply(pd.to_numeric, errors="coerce"), poids, seuils)
+    med_r, med_o = float(ag_k["n_rouge"].median()), float(ag_k["n_orange"].median())
 
     # Compteur de faux positifs live : couleur d'en-tête (repli : ancienne colonne).
     ce = j["couleur_entete"] if "couleur_entete" in j.columns else pd.Series(dtype=str)
@@ -112,6 +120,7 @@ def main() -> int:
 
     cards = []
     for sign, z, c, d in entries:
+        k = sign["key"]
         if sign.get("qualitatif"):
             badge = '<span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span>'
         elif sign.get("approximatif"):
@@ -128,10 +137,20 @@ def main() -> int:
             for m in sign["metrics"]
         )
         ztxt = f"z={z:+.2f}" if z == z else "z indisponible"
+        fptxt = ""
+        if fpx is not None and k in fpx.index:
+            n_a, n_f = int(fpx.loc[k, "n_alertes"]), int(fpx.loc[k, "n_faux"])
+            depuis = pd.Timestamp(fpx.loc[k, "debut"]).year
+            if n_a:
+                tx = float(fpx.loc[k, "taux_faux"])
+                fptxt = (f' · faux positifs : <b>{tx:.0%}</b>'
+                         f' ({n_f}/{n_a} mois ≥ orange depuis {depuis})')
+            else:
+                fptxt = f' · faux positifs : aucun mois ≥ orange depuis {depuis}'
         cards.append(f"""
     <div class="card" style="border-left:6px solid {COL.get(c, COL['gris'])}">
       <h3>n°{sign['numero']} — {sign['nom']} {badge}</h3>
-      <div class="meta">{c} · {ztxt} · données {d}</div>
+      <div class="meta">{c} · {ztxt} · données {d}{fptxt}</div>
       {thermo(z, seuils, c)}
       <details><summary>métriques (poids crédibilité {sign['poids']})</summary><ul>{mets}</ul></details>
     </div>""")
@@ -167,6 +186,7 @@ def main() -> int:
         box-shadow:0 1px 3px rgba(0,0,0,.12);border-left:8px solid {COL[cc]}}}
  .gauge .big{{font-size:1.6em;font-weight:700;color:{COL[cc]}}}
  .gauge .counts{{font-size:1.1em;margin-top:4px}}
+ .gauge .calib{{color:#455a64;font-size:.9em;margin-top:6px}}
  .gauge .moy{{color:#78909c;font-size:.85em;margin-top:8px}}
  .card{{background:#fff;border-radius:8px;padding:12px 16px;margin:10px 0;
        box-shadow:0 1px 2px rgba(0,0,0,.10)}}
@@ -196,6 +216,9 @@ couverture pondérée {_f(r.get('couverture')):.0%}</div>
   <div class="big">{cc.upper()} — pire signe : {noms.get(pire_k, pire_k or '?')} &nbsp;z = {zp:+.2f}</div>
   <div class="counts"><b>{n_r}</b> rouge / <b>{n_o}</b> orange
   (sur les signes à jour, seuils : orange ≥ {seuils['vert']}, rouge ≥ {seuils['orange']})</div>
+  <div class="calib">calibration : à T−12 des {len(fp.columns)} krachs de référence, médiane
+  <b>{med_r:g}</b> rouge / <b>{med_o:g}</b> orange (min–max rouge {int(ag_k['n_rouge'].min())}–{int(ag_k['n_rouge'].max())} ;
+  sur les signes mesurables à l'époque : les krachs anciens en comptent peu)</div>
   <div class="moy">moyenne indicative (pondérée crédibilité, ex-« composite » — dilue les
   extrêmes, ne pilote plus l'en-tête) : z = {zm:+.2f} ({couleur(zm, seuils)}) —
   compteur de faux positifs live : <b>{n_rouge_hist}</b> en-tête(s) rouge(s) sans krach constaté</div>
@@ -203,6 +226,10 @@ couverture pondérée {_f(r.get('couverture')):.0%}</div>
 </div>
 
 <h2>Scorecard des {len(cfg['signes'])} signes — triés par z décroissant</h2>
+<div class="legend">Taux de faux positifs par signe : part des mois ≥ orange (z ≥ {seuils['vert']})
+non suivis d'un krach listé sous 24 mois, sur tout l'historique du signe — un taux élevé
+signale un indicateur chroniquement bruyant. Les ~24 derniers mois, non encore confirmables,
+comptent en faux positifs.</div>
 {''.join(cards)}
 
 <h2>Comparaison à l'empreinte des krachs (z par signe à T−12 mois)</h2>
