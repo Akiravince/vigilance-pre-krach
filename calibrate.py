@@ -75,20 +75,22 @@ def main() -> int:
     aff["taux_faux"] = (aff["taux_faux"].astype(float) * 100).round(0)
     print(aff.to_string())
 
-    # -------------------- pouvoir predictif par signe (tache 3, points 1-4)
-    # Deux axes croises : rappel (krachs couverts avertis) x faux positifs.
+    # ----------------- pouvoir predictif par signe (tache 3 v3 : persistance)
+    # A = part des mois >= orange en fenetre pre-krach [T-18, T-6] (pooled) ;
+    # B = part des mois tranquilles >= orange (hors [T-18, T+24] de tout krach) ;
+    # NSR = B/A (Kaminsky-Reinhart, meme unite : proportion de mois).
     # NE MODIFIE PAS config.yaml : tableau d'aide a la decision uniquement.
     poids_actuels = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
     pp = pouvoir_predictif(sdf, cfg["krachs"], seuils, poids_actuels)
     pp.to_csv(OUT / "pouvoir_predictif_signes.csv", index_label="signe")
     aff = pp.copy()
-    for c in ("rappel", "taux_faux"):
+    for c in ("puissance_A", "fausses_alertes_B"):
         aff[c] = (aff[c].astype(float) * 100).round(0)
-    aff["bruit_signal"] = aff["bruit_signal"].astype(float).round(2)
+    aff["nsr"] = aff["nsr"].astype(float).round(2)
     aff["poids_suggere"] = aff["poids_suggere"].astype(float).round(2)
-    print("\nPouvoir predictif par signe (trie par bruit/signal croissant ;")
-    print("rappel et taux_faux en % ; indicatif = < 3 krachs couverts) :")
-    print(aff[["rappel", "taux_faux", "bruit_signal", "n_krachs_couverts",
+    print("\nPouvoir predictif v3 (persistance ; trie par NSR croissant ;")
+    print("A et B en % de mois ; indicatif = < 3 krachs couverts) :")
+    print(aff[["puissance_A", "fausses_alertes_B", "nsr", "n_krachs_couverts",
                "poids_actuel", "poids_suggere", "indicatif"]].to_string())
 
     # ---------------------------------------------- backtest anti-illusion

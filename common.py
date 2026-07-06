@@ -470,79 +470,78 @@ def faux_positifs_par_signe(sdf: pd.DataFrame, krachs: list, seuils: dict,
     return pd.DataFrame(rows).T
 
 
-def taux_succes_par_signe(sdf: pd.DataFrame, krachs: list, seuils: dict,
-                          fenetre_mois: int = 24) -> pd.DataFrame:
-    """RAPPEL par signe (tâche 3) : parmi les krachs que le signe COUVRE
-    (au moins une observation de z dans les `fenetre_mois` précédant le krach),
-    part de ceux où il a été AU MOINS orange (z >= seuils['vert']) à un moment
-    de cette fenêtre. Le pendant du taux de faux positifs : un signe muet a un
-    faible taux de faux positifs mais aussi un faible rappel.
+def pouvoir_predictif(sdf: pd.DataFrame, krachs: list, seuils: dict,
+                      poids_actuels: dict, min_krachs: int = 3,
+                      pre_debut: int = 18, pre_fin: int = 6,
+                      post_mois: int = 24) -> pd.DataFrame:
+    """Ratio bruit/signal PROPRE (tâche 3 v3) — les deux jambes dans la MÊME
+    unité (proportion de mois), pour mesurer la PERSISTANCE et non un
+    clignotement :
 
-    Retour : DataFrame par signe : n_krachs_couverts, n_avertis, rappel.
+      A (puissance)       = part des mois de fenêtre pré-krach [T-18, T-6]
+                            (cumulés sur tous les krachs couverts) où le signe
+                            est >= orange (z >= seuils['vert']). Le voisinage
+                            de la base T-12 de l'outil ; un pic isolé pèse peu.
+      B (fausses alertes) = part des mois TRANQUILLES où le signe est >= orange.
+                            Tranquille = hors de tout voisinage de krach
+                            [T-18, T+24] (la zone T-6..T, ambiguë — ni fenêtre
+                            de calibration ni post-krach — est aussi exclue :
+                            alerter à la veille d'un krach n'est pas un bruit).
+      NSR = B / A           (Kaminsky-Reinhart). Utile si < 1 ; plus bas = mieux.
+                            inf si A = 0 (signe muet dans les fenêtres).
+
+    Poids suggéré : proportionnel à 1/NSR (Kaminsky 1998), renormalisé pour que
+    la somme des poids suggérés des signes ÉLIGIBLES égale la somme de leurs
+    poids actuels. Un signe couvrant moins de `min_krachs` krachs (au moins une
+    observation dans la fenêtre pré-krach) est marqué `indicatif`, poids ~0.
+
+    Remplace la v2 (rappel « >= orange au moins une fois en 24 mois »), saturée
+    à 100 % et hétérogène en unités (taux mensuel ÷ taux par krach).
     """
     crash_dates = [pd.Timestamp(k["date"]) for k in krachs]
+    seuil = seuils["vert"]
     rows = {}
     for col in sdf.columns:
         v = sdf[col].dropna()
         if v.empty:
             continue
-        couverts = avertis = 0
+        idx = v.index
+        pre = pd.Series(False, index=idx)   # fenêtres de calibration [T-18, T-6]
+        voisin = pd.Series(False, index=idx)  # voisinage exclu des mois tranquilles
+        couverts = 0
         for c in crash_dates:
-            fen = v[(v.index >= c - pd.DateOffset(months=fenetre_mois)) & (v.index < c)]
-            if fen.empty:
-                continue            # série indisponible avant ce krach
-            couverts += 1
-            if (fen >= seuils["vert"]).any():
-                avertis += 1
-        rows[col] = {"n_krachs_couverts": couverts, "n_avertis": avertis,
-                     "rappel": avertis / couverts if couverts else float("nan")}
-    return pd.DataFrame(rows).T
-
-
-def pouvoir_predictif(sdf: pd.DataFrame, krachs: list, seuils: dict,
-                      poids_actuels: dict, min_krachs: int = 3) -> pd.DataFrame:
-    """Croise les DEUX axes (tâche 3) pour ne récompenser ni le signal muet
-    ni le bavard :
-
-      rappel        = krachs avertis / krachs couverts   (taux_succes_par_signe)
-      taux_faux     = mois >= orange sans krach sous 24 mois / mois >= orange
-                      (faux_positifs_par_signe)
-      bruit_signal  = taux_faux / rappel                  (variante simplifiée du
-                      ratio bruit/signal de Kaminsky-Reinhart 1999 ; utile si < 1,
-                      plus bas = mieux ; infini si rappel = 0)
-
-    Poids suggéré (Kaminsky 1998) : proportionnel à l'INVERSE du ratio
-    bruit/signal (= rappel / taux_faux), renormalisé pour que la somme des
-    poids suggérés des signes ÉLIGIBLES égale la somme de leurs poids actuels
-    (l'échelle globale de l'outil ne bouge pas). Strictement décroissant dans
-    l'ordre du tableau : ne récompense ni le muet (rappel bas) ni le bavard
-    (taux_faux haut). NB : une lecture stricte de K-R EXCLURAIT tout signe à
-    ratio >= 1 ; ici il est seulement sous-pondéré — choix à valider.
-    Un signe couvrant moins de `min_krachs` krachs est marqué `indicatif` et
-    suggéré à ~0 : son ratio n'est pas fiable sur si peu d'événements.
-    """
-    fpx = faux_positifs_par_signe(sdf, krachs, seuils)
-    ts = taux_succes_par_signe(sdf, krachs, seuils)
-    df = ts.join(fpx[["n_alertes", "n_faux", "taux_faux"]], how="outer")
-
-    df["bruit_signal"] = df["taux_faux"] / df["rappel"].replace(0, np.nan)
-    df.loc[(df["rappel"] == 0) & df["taux_faux"].notna(), "bruit_signal"] = np.inf
+            w = (idx >= c - pd.DateOffset(months=pre_debut)) & \
+                (idx <= c - pd.DateOffset(months=pre_fin))
+            if w.any():
+                couverts += 1
+            pre |= w
+            voisin |= (idx >= c - pd.DateOffset(months=pre_debut)) & \
+                      (idx <= c + pd.DateOffset(months=post_mois))
+        n_pre, n_calme = int(pre.sum()), int((~voisin).sum())
+        alerte = v >= seuil
+        A = float(alerte[pre].mean()) if n_pre else float("nan")
+        B = float(alerte[~voisin].mean()) if n_calme else float("nan")
+        rows[col] = {"puissance_A": A, "fausses_alertes_B": B,
+                     "nsr": B / A if A and A > 0 else float("inf"),
+                     "n_krachs_couverts": couverts,
+                     "n_mois_fenetre": n_pre, "n_mois_calmes": n_calme}
+    df = pd.DataFrame(rows).T
 
     df["poids_actuel"] = pd.Series(poids_actuels)
     df["indicatif"] = df["n_krachs_couverts"].fillna(0) < min_krachs
 
-    score = (1.0 / df["bruit_signal"]).replace([np.inf, -np.inf], np.nan)
+    score = (1.0 / df["nsr"]).replace([np.inf, -np.inf], np.nan)
     fini = score.dropna()
-    if (df["bruit_signal"] == 0).any() and not fini.empty:
-        score[df["bruit_signal"] == 0] = fini.max() * 10  # parfait : borne haute
+    if (df["nsr"] == 0).any() and not fini.empty:
+        score[df["nsr"] == 0] = fini.max() * 10   # parfait : borne haute
     score = score.fillna(0.0).where(~df["indicatif"], 0.0)
+
     eligibles = score[~df["indicatif"]].dropna()
     total = df.loc[eligibles.index, "poids_actuel"].sum()
     df["poids_suggere"] = 0.0
     if eligibles.sum() > 0:
         df.loc[eligibles.index, "poids_suggere"] = eligibles / eligibles.sum() * total
-    return df.sort_values("bruit_signal")
-
+    return df.sort_values("nsr")
 
 # ------------------------------------------------------------------- le panel
 def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dict:
