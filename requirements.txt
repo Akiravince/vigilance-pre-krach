@@ -1,5 +1,11 @@
-pandas>=2.0
-numpy>=1.24
-PyYAML>=6.0
-openpyxl>=3.1
-xlrd>=2.0
+# Versions EPINGLEES (run de reproductibilite du 2026-07-06, commit d1fbcb9) :
+# un changement de version de pandas/numpy peut modifier les calculs (cf.
+# common.py apply_transform : defaut de pct_change dependant de la version).
+# GitHub Actions installe ce fichier tel quel (daily.yml -> pip install -r).
+# Pour mettre a jour : changer la version ICI, relancer le run de repro
+# (clone frais, git status vide apres regeneration), puis committer.
+pandas==2.3.3
+numpy==2.2.6
+PyYAML==6.0.3
+openpyxl==3.1.5
+xlrd==2.0.2
