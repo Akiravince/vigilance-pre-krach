@@ -116,7 +116,10 @@ def main() -> int:
         d = r.get(f"date_{k}")
         d = str(d) if d == d and d else "—"
         entries.append((sign, z, c, d))
-    entries.sort(key=lambda e: (e[1] != e[1], -(e[1] if e[1] == e[1] else 0.0)))
+    # tri : z décroissant ; à z indisponible égal, poids crédibilité décroissant
+    entries.sort(key=lambda e: (e[1] != e[1],
+                                -(e[1] if e[1] == e[1] else 0.0),
+                                -float(e[0]["poids"])))
 
     cards = []
     for sign, z, c, d in entries:
@@ -129,6 +132,13 @@ def main() -> int:
             badge = ""
         if c == "gris":
             badge += ' <span class="badge badge-g">gris — hors en-tête</span>'
+        # Drapeaux de fiabilité issus de la re-pondération NSR (config.yaml)
+        if sign.get("indicatif"):
+            badge += ' <span class="badge badge-g">indicatif — couverture faible, poids plafonné 1.0×</span>'
+        if sign.get("bruite"):
+            badge += ' <span class="badge">bruité — NSR ≥ 1, sous-pondéré</span>'
+        if sign.get("plafonne"):
+            badge += ' <span class="badge badge-g">plafonné</span>'
         mets = "".join(
             f'<li>{m["description"]}'
             + (' <span class="badge">≈</span>' if m.get("approximatif") else "")

@@ -124,6 +124,17 @@ def main() -> int:
         "-> plus d'alertes, donc plus de faux positifs : c'est le prix de la",
         "non-dilution ; le signe 16 (declencheur) reste par nature hors de portee.",
     ]
+    # Traçabilité des poids (tache 3 v4) : provenance + derive eventuelle entre
+    # les poids en vigueur (config.yaml) et la recommandation du jour.
+    drift = float((pp["poids_final"] - pp["poids_actuel"]).abs().max())
+    lignes += [
+        "",
+        "PROVENANCE DES POIDS : " + " ".join(str(cfg.get("provenance_poids",
+                                                         "non documentee")).split()),
+        f"Ecart max |poids config - recommandation NSR du jour| : {drift:.2f}"
+        + (" (ATTENTION : > 0.5, relancer l'analyse ou re-valider les poids)"
+           if drift > 0.5 else " (OK)"),
+    ]
     (OUT / "backtest.txt").write_text("\n".join(lignes), encoding="utf-8")
     print("\n" + "\n".join(lignes))
 

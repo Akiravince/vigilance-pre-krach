@@ -19,6 +19,32 @@
 #   GDP, T10Y3M, M2SL, DFII10, VIXCLS, BAMLH0A0HYM2 : standards, à confirmer
 #   au premier appel API réel → `python test_fred.py`
 
+# -----------------------------------------------------------------------------
+# POIDS re-dérivés le 2026-07-06 (tâche 3 v4) depuis le pouvoir prédictif RÉEL,
+# validés par Vincent. Méthode (common.pouvoir_predictif, calibrate.py) :
+#   NSR = B/A (Kaminsky-Reinhart, même unité : proportion de mois)
+#     A = part des mois >= orange en fenêtre pré-krach T-18..T-6 (PERSISTANCE)
+#     B = part des mois tranquilles >= orange (hors T-18..T+24 de tout krach)
+#   poids = racine(1/NSR) (compresse sans changer l'ordre), somme conservée
+#   (87.33 sur les 11 signes mesurés), puis contraintes anti-sur-apprentissage :
+#     - indicatif (< 4 krachs couverts OU < 3 krachs persistants, persistant =
+#       >= 50 % des mois de SA fenêtre en alerte) -> plafond 1.0x la moyenne.
+#       Capturés : fragilité (1 seul krach persistant : 2008 — d'où son plafond
+#       malgré le meilleur NSR 0.23), surchauffe (1 : 1973), inégalités
+#       (3 couverts), prime_risque (2 persistants), standards_pret (0).
+#     - plafond général 1.5x la moyenne (crédit 11.79 passe juste dessous).
+#     - bruité (NSR >= 1) -> plancher 0.25x + badge : prime_risque (NSR 2.34),
+#       standards_pret (3.63). Information affichée, jamais exclue.
+#   Détail : output/pouvoir_predictif_signes.csv. Poids des signes SANS données
+#   (euphorie, qualitatifs n°4/n°7) inchangés : hors composite tant que gris.
+# -----------------------------------------------------------------------------
+
+provenance_poids: >-
+  Poids re-dérivés le 2026-07-06 (NSR v4) : racine(1/NSR), fenêtre pré-krach
+  T-18..T-6, plafond indicatif 1.0x moyenne (<4 krachs couverts ou <3
+  persistants), plafond général 1.5x, plancher bruité 0.25x (NSR>=1) ;
+  somme 87.33 conservée. Voir en-tête de ce fichier et pouvoir_predictif().
+
 normalisation:
   # Z-score en fenêtre EXPANSIVE (point-in-time : seule l'histoire passée est
   # utilisée) — même méthode pour l'historique et le présent (§7 du brief).
@@ -41,7 +67,7 @@ signes:
   - key: credit
     numero: 1
     nom: "Expansion excessive du crédit / levier"
-    poids: 8.03
+    poids: 11.79   # NSR v4 2026-07-06 — ancien 8.03
     approximatif: false
     metrics:
       - key: credit_gdp_gap
@@ -82,7 +108,9 @@ signes:
   - key: standards_pret
     numero: 3
     nom: "Innovation financière / relâchement des standards de prêt"
-    poids: 7.70
+    poids: 3.67   # NSR v4 2026-07-06 — ancien 7.70
+    indicatif: true   # 3 krachs couverts, 0 persistant
+    bruite: true   # NSR 3.63 : bruit > signal
     approximatif: false
     metrics:
       - key: sloos_ci
@@ -96,7 +124,7 @@ signes:
   - key: survalorisation
     numero: 5
     nom: "Survalorisation / prix vs fondamentaux"
-    poids: 7.44
+    poids: 9.14   # NSR v4 2026-07-06 — ancien 7.44
     approximatif: false
     metrics:
       - key: cape
@@ -115,7 +143,7 @@ signes:
   - key: monetaire
     numero: 9
     nom: "Conditions monétaires accommodantes"
-    poids: 7.90
+    poids: 10.86   # NSR v4 2026-07-06 — ancien 7.90
     approximatif: false
     metrics:
       - key: courbe_10a3m
@@ -141,7 +169,9 @@ signes:
   - key: prime_risque
     numero: 10
     nom: "Compression des primes de risque / complaisance"
-    poids: 7.80
+    poids: 4.57   # NSR v4 2026-07-06 — ancien 7.80
+    indicatif: true   # 2 krachs persistants sur 7 couverts
+    bruite: true   # NSR 2.34 : bruit > signal
     approximatif: false
     metrics:
       # hy_oas (BAMLH0A0HYM2) RETIRÉ du calcul le 05/07/2026 : depuis avril
@@ -170,7 +200,9 @@ signes:
   - key: fragilite
     numero: 6
     nom: "Fragilité structurelle du système financier"
-    poids: 8.75
+    poids: 7.94   # NSR v4 2026-07-06 — ancien 8.75
+    indicatif: true   # 1 seul krach persistant (2008)
+    plafonne: true   # ramené à 1.0x la moyenne
     approximatif: false
     metrics:
       - key: nfci_leverage
@@ -183,7 +215,8 @@ signes:
   - key: surchauffe
     numero: 12
     nom: "Surchauffe des transactions (volumes, IPO, margin)"
-    poids: 7.63
+    poids: 7.92   # NSR v4 2026-07-06 — ancien 7.63
+    indicatif: true   # 1 seul krach persistant (1973)
     approximatif: false
     metrics:
       - key: margin_loans_z1
@@ -204,7 +237,7 @@ signes:
   - key: desequilibres
     numero: 8
     nom: "Déséquilibres globaux / flux de capitaux"
-    poids: 8.50
+    poids: 9.0   # NSR v4 2026-07-06 — ancien 8.50
     approximatif: false
     metrics:
       - key: current_account_gdp
@@ -217,7 +250,8 @@ signes:
   - key: inegalites
     numero: 15
     nom: "Montée des inégalités / concentration des richesses"
-    poids: 8.33
+    poids: 7.39   # NSR v4 2026-07-06 — ancien 8.33
+    indicatif: true   # 3 krachs couverts seulement
     approximatif: false
     metrics:
       - key: top1_wealth_share
@@ -267,7 +301,7 @@ signes:
   - key: reflexivite
     numero: 11
     nom: "Réflexivité / boucles de rétroaction"
-    poids: 7.75
+    poids: 7.22   # NSR v4 2026-07-06 — ancien 7.75
     approximatif: true   # proxy AUTOMATIQUE mais indirect du concept — marqué ≈
     metrics:
       - key: net_equity_issuance_gdp
@@ -280,7 +314,7 @@ signes:
   - key: ponzi
     numero: 13
     nom: "Dynamique « Ponzi » / refinancement perpétuel"
-    poids: 7.50
+    poids: 7.82   # NSR v4 2026-07-06 — ancien 7.50
     approximatif: true   # proxy AUTOMATIQUE mais indirect — marqué ≈
     metrics:
       - key: corp_debt_to_profits
