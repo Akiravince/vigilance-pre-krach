@@ -38,6 +38,18 @@
 #   Détail : output/pouvoir_predictif_signes.csv. Poids des signes SANS données
 #   (euphorie, qualitatifs n°4/n°7) inchangés : hors composite tant que gris.
 # -----------------------------------------------------------------------------
+# ETAGES (tâche 4, validés le 2026-07-06) — métadonnée d'AFFICHAGE et de
+# CALIBRATION, aucun recalcul de z ni de poids. Étage du signe = date de début
+# du z de sa métrique la plus ANCIENNE (= naissance du score du signe, la date
+# affichée dans les encarts « depuis… »).
+#   A (début <= 1947)     : backtestable sur les 7 krachs, 1929/1937 compris.
+#   B (1948-1985)         : voit les krachs post-1945 (nuance : fragilité,
+#                           z depuis 1980, ne couvre pas 1973-74).
+#   C (début > 1985)      : contemporain, 3 krachs — déjà « indicatif » (t.3).
+#   Sans champ etage      : aucune donnée (euphorie, qualitatifs) — hors étage.
+# Le « socle robuste » de l'empreinte = A+B (9 signes) ; ligne « A seul » pour
+# la comparaison avec 1929/1937.
+# -----------------------------------------------------------------------------
 
 provenance_poids: >-
   Poids re-dérivés le 2026-07-06 (NSR v4) : racine(1/NSR), fenêtre pré-krach
@@ -66,6 +78,7 @@ krachs:              # date = début du krach ; empreinte relevée à T-12 mois
 signes:
   - key: credit
     numero: 1
+    etage: B   # z depuis 1967-06 — règle « métrique la plus ancienne »
     nom: "Expansion excessive du crédit / levier"
     poids: 11.79   # NSR v4 2026-07-06 — ancien 8.03
     approximatif: false
@@ -107,6 +120,7 @@ signes:
 
   - key: standards_pret
     numero: 3
+    etage: C   # z depuis 1995-03 — règle « métrique la plus ancienne »
     nom: "Innovation financière / relâchement des standards de prêt"
     poids: 3.67   # NSR v4 2026-07-06 — ancien 7.70
     indicatif: true   # 3 krachs couverts, 0 persistant
@@ -123,6 +137,7 @@ signes:
 
   - key: survalorisation
     numero: 5
+    etage: A   # z depuis 1890-12 (CAPE) — règle « métrique la plus ancienne »
     nom: "Survalorisation / prix vs fondamentaux"
     poids: 9.14   # NSR v4 2026-07-06 — ancien 7.44
     approximatif: false
@@ -142,6 +157,7 @@ signes:
 
   - key: monetaire
     numero: 9
+    etage: B   # z depuis 1969-12 (M2 ; courbe 1991, taux réel 2007) — règle « métrique la plus ancienne »
     nom: "Conditions monétaires accommodantes"
     poids: 10.86   # NSR v4 2026-07-06 — ancien 7.90
     approximatif: false
@@ -168,6 +184,7 @@ signes:
 
   - key: prime_risque
     numero: 10
+    etage: A   # z depuis 1928-12 (Baa-Aaa) — règle « métrique la plus ancienne »
     nom: "Compression des primes de risque / complaisance"
     poids: 4.57   # NSR v4 2026-07-06 — ancien 7.80
     indicatif: true   # 2 krachs persistants sur 7 couverts
@@ -199,6 +216,7 @@ signes:
   # ---------------------------------------------------------------------------
   - key: fragilite
     numero: 6
+    etage: B   # z depuis 1980-12 — ne couvre pas 1973-74 — règle « métrique la plus ancienne »
     nom: "Fragilité structurelle du système financier"
     poids: 7.94   # NSR v4 2026-07-06 — ancien 8.75
     indicatif: true   # 1 seul krach persistant (2008)
@@ -214,6 +232,7 @@ signes:
 
   - key: surchauffe
     numero: 12
+    etage: B   # z depuis 1959-09 — règle « métrique la plus ancienne »
     nom: "Surchauffe des transactions (volumes, IPO, margin)"
     poids: 7.92   # NSR v4 2026-07-06 — ancien 7.63
     indicatif: true   # 1 seul krach persistant (1973)
@@ -236,6 +255,7 @@ signes:
 
   - key: desequilibres
     numero: 8
+    etage: B   # z depuis 1956-12 — règle « métrique la plus ancienne »
     nom: "Déséquilibres globaux / flux de capitaux"
     poids: 9.0   # NSR v4 2026-07-06 — ancien 8.50
     approximatif: false
@@ -249,6 +269,7 @@ signes:
 
   - key: inegalites
     numero: 15
+    etage: C   # z depuis 1999-06 — règle « métrique la plus ancienne »
     nom: "Montée des inégalités / concentration des richesses"
     poids: 7.39   # NSR v4 2026-07-06 — ancien 8.33
     indicatif: true   # 3 krachs couverts seulement
@@ -300,6 +321,7 @@ signes:
 
   - key: reflexivite
     numero: 11
+    etage: B   # z depuis 1959-09 — règle « métrique la plus ancienne »
     nom: "Réflexivité / boucles de rétroaction"
     poids: 7.22   # NSR v4 2026-07-06 — ancien 7.75
     approximatif: true   # proxy AUTOMATIQUE mais indirect du concept — marqué ≈
@@ -313,6 +335,7 @@ signes:
 
   - key: ponzi
     numero: 13
+    etage: B   # z depuis 1957-05 — règle « métrique la plus ancienne »
     nom: "Dynamique « Ponzi » / refinancement perpétuel"
     poids: 7.82   # NSR v4 2026-07-06 — ancien 7.50
     approximatif: true   # proxy AUTOMATIQUE mais indirect — marqué ≈
