@@ -263,3 +263,30 @@ signes:
         danger: high
         optional: true
         qualitatif: true
+
+  - key: reflexivite
+    numero: 11
+    nom: "Réflexivité / boucles de rétroaction"
+    poids: 7.75
+    approximatif: true   # proxy AUTOMATIQUE mais indirect du concept — marqué ≈
+    metrics:
+      - key: net_equity_issuance_gdp
+        description: "Émissions nettes d'actions des sociétés non financières (Fed Z.1) rapportées au PIB — proxy ≈ de la boucle réflexive « prix ↑ → rachats financés par dette → prix ↑ ». Fortement NÉGATIF = rachats nets massifs = boucle auto-entretenue → danger sur les valeurs basses (danger=low). SENS À VALIDER sur l'empreinte (comme signes 6/8). z-score insensible à l'échelle → ratio_gdp correct."
+        source: fred
+        series: BOGZ1FU103164103Q
+        transform: ratio_gdp
+        danger: low
+
+  - key: ponzi
+    numero: 13
+    nom: "Dynamique « Ponzi » / refinancement perpétuel"
+    poids: 7.50
+    approximatif: true   # proxy AUTOMATIQUE mais indirect — marqué ≈
+    metrics:
+      - key: debt_service_ratio
+        description: "Ratio de service de la dette des ménages (FRED TDSP, % du revenu disponible, trimestriel depuis 1980) — proxy ≈ de la dépendance au refinancement / dynamique Minsky « Ponzi ». A culminé fin 2007 juste avant la crise → danger sur les valeurs hautes (danger=high). Alternative plus large si un ID est trouvé : DSR BIS du secteur privé non financier."
+        source: fred
+        series: TDSP
+        transform: level
+        danger: high
+        min_hist_months: 60   # série débute 1980
