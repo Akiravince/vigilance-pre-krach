@@ -470,6 +470,80 @@ def faux_positifs_par_signe(sdf: pd.DataFrame, krachs: list, seuils: dict,
     return pd.DataFrame(rows).T
 
 
+def taux_succes_par_signe(sdf: pd.DataFrame, krachs: list, seuils: dict,
+                          fenetre_mois: int = 24) -> pd.DataFrame:
+    """RAPPEL par signe (tâche 3) : parmi les krachs que le signe COUVRE
+    (au moins une observation de z dans les `fenetre_mois` précédant le krach),
+    part de ceux où il a été AU MOINS orange (z >= seuils['vert']) à un moment
+    de cette fenêtre. Le pendant du taux de faux positifs : un signe muet a un
+    faible taux de faux positifs mais aussi un faible rappel.
+
+    Retour : DataFrame par signe : n_krachs_couverts, n_avertis, rappel.
+    """
+    crash_dates = [pd.Timestamp(k["date"]) for k in krachs]
+    rows = {}
+    for col in sdf.columns:
+        v = sdf[col].dropna()
+        if v.empty:
+            continue
+        couverts = avertis = 0
+        for c in crash_dates:
+            fen = v[(v.index >= c - pd.DateOffset(months=fenetre_mois)) & (v.index < c)]
+            if fen.empty:
+                continue            # série indisponible avant ce krach
+            couverts += 1
+            if (fen >= seuils["vert"]).any():
+                avertis += 1
+        rows[col] = {"n_krachs_couverts": couverts, "n_avertis": avertis,
+                     "rappel": avertis / couverts if couverts else float("nan")}
+    return pd.DataFrame(rows).T
+
+
+def pouvoir_predictif(sdf: pd.DataFrame, krachs: list, seuils: dict,
+                      poids_actuels: dict, min_krachs: int = 3) -> pd.DataFrame:
+    """Croise les DEUX axes (tâche 3) pour ne récompenser ni le signal muet
+    ni le bavard :
+
+      rappel        = krachs avertis / krachs couverts   (taux_succes_par_signe)
+      taux_faux     = mois >= orange sans krach sous 24 mois / mois >= orange
+                      (faux_positifs_par_signe)
+      bruit_signal  = taux_faux / rappel                  (variante simplifiée du
+                      ratio bruit/signal de Kaminsky-Reinhart 1999 ; utile si < 1,
+                      plus bas = mieux ; infini si rappel = 0)
+
+    Poids suggéré (Kaminsky 1998) : proportionnel à l'INVERSE du ratio
+    bruit/signal (= rappel / taux_faux), renormalisé pour que la somme des
+    poids suggérés des signes ÉLIGIBLES égale la somme de leurs poids actuels
+    (l'échelle globale de l'outil ne bouge pas). Strictement décroissant dans
+    l'ordre du tableau : ne récompense ni le muet (rappel bas) ni le bavard
+    (taux_faux haut). NB : une lecture stricte de K-R EXCLURAIT tout signe à
+    ratio >= 1 ; ici il est seulement sous-pondéré — choix à valider.
+    Un signe couvrant moins de `min_krachs` krachs est marqué `indicatif` et
+    suggéré à ~0 : son ratio n'est pas fiable sur si peu d'événements.
+    """
+    fpx = faux_positifs_par_signe(sdf, krachs, seuils)
+    ts = taux_succes_par_signe(sdf, krachs, seuils)
+    df = ts.join(fpx[["n_alertes", "n_faux", "taux_faux"]], how="outer")
+
+    df["bruit_signal"] = df["taux_faux"] / df["rappel"].replace(0, np.nan)
+    df.loc[(df["rappel"] == 0) & df["taux_faux"].notna(), "bruit_signal"] = np.inf
+
+    df["poids_actuel"] = pd.Series(poids_actuels)
+    df["indicatif"] = df["n_krachs_couverts"].fillna(0) < min_krachs
+
+    score = (1.0 / df["bruit_signal"]).replace([np.inf, -np.inf], np.nan)
+    fini = score.dropna()
+    if (df["bruit_signal"] == 0).any() and not fini.empty:
+        score[df["bruit_signal"] == 0] = fini.max() * 10  # parfait : borne haute
+    score = score.fillna(0.0).where(~df["indicatif"], 0.0)
+    eligibles = score[~df["indicatif"]].dropna()
+    total = df.loc[eligibles.index, "poids_actuel"].sum()
+    df["poids_suggere"] = 0.0
+    if eligibles.sum() > 0:
+        df.loc[eligibles.index, "poids_suggere"] = eligibles / eligibles.sum() * total
+    return df.sort_values("bruit_signal")
+
+
 # ------------------------------------------------------------------- le panel
 def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dict:
     """Construit le panel mensuel complet : z par métrique, score par signe,

@@ -22,7 +22,8 @@ import sys
 
 import pandas as pd
 
-from common import DATA, OUT, compute_panel, faux_positifs_par_signe, load_config
+from common import (DATA, OUT, compute_panel, faux_positifs_par_signe,
+                    load_config, pouvoir_predictif)
 
 
 def main() -> int:
@@ -73,6 +74,22 @@ def main() -> int:
     aff = fpx.copy()
     aff["taux_faux"] = (aff["taux_faux"].astype(float) * 100).round(0)
     print(aff.to_string())
+
+    # -------------------- pouvoir predictif par signe (tache 3, points 1-4)
+    # Deux axes croises : rappel (krachs couverts avertis) x faux positifs.
+    # NE MODIFIE PAS config.yaml : tableau d'aide a la decision uniquement.
+    poids_actuels = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
+    pp = pouvoir_predictif(sdf, cfg["krachs"], seuils, poids_actuels)
+    pp.to_csv(OUT / "pouvoir_predictif_signes.csv", index_label="signe")
+    aff = pp.copy()
+    for c in ("rappel", "taux_faux"):
+        aff[c] = (aff[c].astype(float) * 100).round(0)
+    aff["bruit_signal"] = aff["bruit_signal"].astype(float).round(2)
+    aff["poids_suggere"] = aff["poids_suggere"].astype(float).round(2)
+    print("\nPouvoir predictif par signe (trie par bruit/signal croissant ;")
+    print("rappel et taux_faux en % ; indicatif = < 3 krachs couverts) :")
+    print(aff[["rappel", "taux_faux", "bruit_signal", "n_krachs_couverts",
+               "poids_actuel", "poids_suggere", "indicatif"]].to_string())
 
     # ---------------------------------------------- backtest anti-illusion
     # Depuis la tâche 1, « rouge » = couleur d'EN-TÊTE (pire signe >= seuil),
