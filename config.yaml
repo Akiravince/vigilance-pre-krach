@@ -247,3 +247,19 @@ signes:
         danger: high
         optional: true
         qualitatif: true
+
+  - key: narratif
+    numero: 4
+    nom: "Déplacement / narratif « cette fois c'est différent »"
+    poids: 7.78
+    approximatif: false
+    qualitatif: true
+    metrics:
+      - key: narrative_score
+        description: "Intensité du récit « cette fois c'est différent » justifiant des valorisations extrêmes — JUGEMENT (pas une mesure). Typiquement : nouvelle techno ou instrument financier (chemins de fer, dot-com, subprime/titrisation, IA). Proxy possible : fréquence média/Google Trends de la formule, ou nombre d'articles « new paradigm ». En attente d'un fichier data/manual/narrative_score.csv (date,value ; valeur haute = récit euphorique dominant = danger)."
+        source: manual
+        series: narrative_score
+        transform: level
+        danger: high
+        optional: true
+        qualitatif: true
