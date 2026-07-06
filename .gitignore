@@ -1,0 +1,11 @@
+# Secrets — ne jamais commiter
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# NB : output/, data/history/ et data/cache/ sont VOLONTAIREMENT versionnés
+# (brief §2 : « fichiers CSV versionnés dans le dépôt ; historique horodaté »).
+# Le cache versionné sert aussi de repli si une source échoue sur le runner.

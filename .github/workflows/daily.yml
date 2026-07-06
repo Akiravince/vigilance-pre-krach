@@ -1,0 +1,70 @@
+# Phase 4 — Automatisation quotidienne (brief §6).
+# Prérequis côté GitHub (une fois) :
+#   1. Settings → Secrets and variables → Actions → New repository secret :
+#      FRED_API_KEY = <clé FRED>   (+ optionnel : SHILLER_XLS_URL)
+#   2. Settings → Pages → Source : « GitHub Actions »
+name: vigilance-quotidienne
+
+on:
+  schedule:
+    - cron: "30 22 * * *"   # 22h30 UTC, après la clôture des marchés US
+  workflow_dispatch:         # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: write   # commit des CSV horodatés
+  pages: write      # publication du dashboard
+  id-token: write
+
+concurrency:
+  group: vigilance
+  cancel-in-progress: false
+
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Calibration + relevé du jour + dashboard
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          SHILLER_XLS_URL: ${{ secrets.SHILLER_XLS_URL }}
+        run: |
+          python calibrate.py
+          python monitor.py
+          python dashboard.py
+
+      - name: Commit des CSV horodatés (journal, empreinte, cache)
+        run: |
+          git config user.name "vigilance-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output data/history data/cache
+          git diff --cached --quiet || git commit -m "Relevé du $(date -u +%F)"
+          git push
+
+      - name: Préparer le site statique
+        run: |
+          mkdir -p _site
+          cp output/dashboard.html _site/index.html
+          cp output/*.csv output/backtest.txt _site/ 2>/dev/null || true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  publication:
+    needs: releve
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

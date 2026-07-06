@@ -1,0 +1,165 @@
+# =============================================================================
+# Outil de vigilance pré-krach — configuration (Phase 1)
+# Ajouter un signe plus tard = ajouter une entrée ici, pas réécrire le code.
+# =============================================================================
+# Champs par métrique :
+#   key          : identifiant interne (nom du fichier de cache/fixture = série)
+#   series       : ID de série FRED, ou nom logique pour les sources non-FRED
+#   source       : fred | shiller | aaii | cboe | finra
+#   transform    : level | yoy_pct | ratio_gdp | hp_gap
+#   danger       : high | low  → sens du danger sur la valeur TRANSFORMÉE
+#   min_hist_months : historique minimal avant de produire un z-score (défaut 120)
+#   optional     : true → l'indisponibilité n'est pas bloquante (affichée "indisponible")
+#
+# Statut de validation des ID FRED (05/07/2026) :
+#   QUSPAM770A   ✅ vérifié (BIS crédit privé non financier / PIB, T4 1947 → T3 2025)
+#   DRTSCILM     ✅ vérifié (SLOOS, T2 1990 → T2 2026)
+#   NCBEILQ027S  ✅ vérifié (Z.1, T4 1945 → T1 2026) — remplace WILL5000INDFC,
+#                   retiré de FRED le 3 juin 2024 (données Wilshire supprimées)
+#   GDP, T10Y3M, M2SL, DFII10, VIXCLS, BAMLH0A0HYM2 : standards, à confirmer
+#   au premier appel API réel → `python test_fred.py`
+
+normalisation:
+  # Z-score en fenêtre EXPANSIVE (point-in-time : seule l'histoire passée est
+  # utilisée) — même méthode pour l'historique et le présent (§7 du brief).
+  methode: zscore_expansif
+  min_hist_months: 120
+  seuils:            # sur le z orienté (positif = danger)
+    vert: 0.5        # z < 0.5  → vert
+    orange: 1.5      # z < 1.5  → orange ; sinon rouge
+
+krachs:              # date = début du krach ; empreinte relevée à T-12 mois
+  - {nom: "1929",    date: "1929-09-01"}
+  - {nom: "1937",    date: "1937-03-01"}
+  - {nom: "1973-74", date: "1973-01-01"}
+  - {nom: "1987",    date: "1987-10-01"}
+  - {nom: "2000",    date: "2000-03-01"}
+  - {nom: "2008",    date: "2008-09-01"}
+  - {nom: "2020",    date: "2020-02-01"}
+
+signes:
+  - key: credit
+    numero: 1
+    nom: "Expansion excessive du crédit / levier"
+    poids: 8.03
+    approximatif: false
+    metrics:
+      - key: credit_gdp_gap
+        description: "Crédit privé non financier / PIB (BIS) — écart à la tendance (gap, type BIS)"
+        source: fred
+        series: QUSPAM770A
+        transform: hp_gap
+        danger: high
+      - key: margin_debt_yoy
+        description: "Dette sur marge FINRA — croissance sur 12 mois (%)"
+        source: finra
+        series: margin_debt
+        transform: yoy_pct
+        danger: high
+        optional: true   # pas d'API FINRA stable → fichier manuel data/manual/margin_debt.csv
+
+  - key: euphorie
+    numero: 2
+    nom: "Euphorie spéculative / psychologie de foule"
+    poids: 7.63
+    approximatif: true   # proxies imparfaits — à marquer visuellement
+    metrics:
+      - key: aaii_bull_bear
+        description: "Sentiment AAII — écart haussiers − baissiers (pts)"
+        source: aaii
+        series: aaii
+        transform: level
+        danger: high
+        optional: true
+      - key: put_call_equity
+        description: "Ratio put/call actions CBOE (bas = euphorie)"
+        source: cboe
+        series: putcall
+        transform: level
+        danger: low
+        optional: true
+
+  - key: standards_pret
+    numero: 3
+    nom: "Innovation financière / relâchement des standards de prêt"
+    poids: 7.70
+    approximatif: false
+    metrics:
+      - key: sloos_ci
+        description: "SLOOS — % net de banques durcissant les prêts C&I (bas/négatif = relâchement)"
+        source: fred
+        series: DRTSCILM
+        transform: level
+        danger: low
+        min_hist_months: 60   # série courte (débute 1990)
+
+  - key: survalorisation
+    numero: 5
+    nom: "Survalorisation / prix vs fondamentaux"
+    poids: 7.44
+    approximatif: false
+    metrics:
+      - key: cape
+        description: "CAPE de Shiller (P/E ajusté du cycle, depuis 1871)"
+        source: shiller
+        series: shiller_cape
+        transform: level
+        danger: high
+      - key: buffett
+        description: "« Indicateur Buffett » : actions sociétés non financières (Z.1) / PIB (%) — remplace Wilshire/PIB (série retirée de FRED)"
+        source: fred
+        series: NCBEILQ027S
+        transform: ratio_gdp
+        danger: high
+
+  - key: monetaire
+    numero: 9
+    nom: "Conditions monétaires accommodantes"
+    poids: 7.90
+    approximatif: false
+    metrics:
+      - key: courbe_10a3m
+        description: "Pente de la courbe 10 ans − 3 mois (pts %) — basse/inversée = danger"
+        source: fred
+        series: T10Y3M
+        transform: level
+        danger: low
+      - key: m2_yoy
+        description: "M2 — croissance sur 12 mois (%)"
+        source: fred
+        series: M2SL
+        transform: yoy_pct
+        danger: high
+      - key: taux_reel_10a
+        description: "Taux réel 10 ans (TIPS, %) — bas = accommodant"
+        source: fred
+        series: DFII10
+        transform: level
+        danger: low
+        min_hist_months: 60   # série débute 2003
+
+  - key: prime_risque
+    numero: 10
+    nom: "Compression des primes de risque / complaisance"
+    poids: 7.80
+    approximatif: false
+    metrics:
+      # hy_oas (BAMLH0A0HYM2) RETIRÉ du calcul le 05/07/2026 : depuis avril
+      # 2026, FRED ne publie plus que 3 ans glissants d'historique ICE BofA
+      # (« this series will only include 3 years of observations ») → z-score
+      # sur base historique impossible. Remplacé par le spread Baa−Aaa de
+      # Moody's (mensuel depuis 1919, couvre même 1929). Ré-activable si
+      # une source longue est trouvée.
+      - key: baa_aaa_spread
+        description: "Spread obligataire Baa − Aaa Moody's (pts %, depuis 1919) — bas = compression du risque de crédit"
+        source: fred
+        series: BAA
+        subtract_series: AAA
+        transform: level
+        danger: low
+      - key: vix
+        description: "VIX (moyenne mensuelle) — très bas = complaisance"
+        source: fred
+        series: VIXCLS
+        transform: level
+        danger: low
