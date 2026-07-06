@@ -96,6 +96,26 @@ signes:
         transform: yoy_pct
         danger: high
         optional: true   # pas d'API FINRA stable → fichier manuel data/manual/margin_debt.csv
+      # ----- tâche 5a (2026-07-06, validée) : levier hors-bilan / dette privée,
+      # l'angle mort des séries bancaires classiques. Deux proxies ≈, sens high
+      # VALIDÉ à l'empreinte (footprint T-12). Aveugles avant ~1985 : leurs cases
+      # pré-1985 restent « – » et ils n'entrent pas dans la moyenne du signe pour
+      # les vieux krachs (moyenne des métriques DISPONIBLES à chaque date).
+      - key: abs_gdp
+        description: "Actifs des émetteurs d'ABS (Fed Z.1 L.127 — SPV de titrisation, y compris titrisations de data centers) rapportés au PIB. Le levier hors-bilan au sens propre : pic à 32 % du PIB en 2007, ≈6 % aujourd'hui. danger=high validé à l'empreinte (T-12 : 1987 +7.1, 2000 +3.7, 2008 +3.7). RÉSERVE : série née en 1983 → fenêtre expansive JEUNE avant ~1995 (le +7.1 de 1986 repose sur 3 ans de variance) ; aveugle avant 1985."
+        source: fred
+        series: BOGZ1FL674090005Q
+        transform: ratio_gdp
+        danger: high
+        approximatif: true
+      - key: market_debt_share
+        description: "Part de la dette de MARCHÉ dans la dette des SNF : obligations (NCBDBIQ027S) ÷ dette totale titres+prêts (BCNSDODNS). Capte la migration du levier hors du canal bancaire (obligations, placements privés, private credit refinancé en bonds) que le gap crédit/PIB agrège sans la voir ; ≈62 % aujourd'hui, record historique. danger=high validé sur l'ère moderne (T-12 : 2000 +1.7, 2008 +0.3, 2020 +1.8). RÉSERVE : à CONTRE-SENS avant 1987 (-0.7) et 1973 (-1.2), époques de levier bancaire — lecture valable post-1985 / migration hors-banques."
+        source: fred
+        series: NCBDBIQ027S
+        divide_series: BCNSDODNS
+        transform: level
+        danger: high
+        approximatif: true
 
   - key: euphorie
     numero: 2
