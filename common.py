@@ -416,6 +416,10 @@ def compute_panel(cfg: dict, offline: bool = False, verbose: bool = True) -> dic
                 if m.get("subtract_series"):
                     other = get_series(m["subtract_series"], src, offline)
                     raw = (to_monthly(raw) - to_monthly(other)).dropna()
+                if m.get("divide_series"):
+                    denom = get_series(m["divide_series"], src, offline)
+                    ratio = to_monthly(raw) / to_monthly(denom).replace(0, np.nan)
+                    raw = ratio.replace([np.inf, -np.inf], np.nan).dropna()
                 if m["transform"] == "ratio_gdp" and gdp is None:
                     gdp = get_series("GDP", "fred", offline)
                 val = apply_transform(raw, m["transform"], gdp)

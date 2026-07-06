@@ -1,7 +1,7 @@
 BACKTEST HONNETE (ne pas sur-interpreter)
 Periode couverte par le composite : 1890-12 -> 2026-07
-Mois 'rouges' (z composite >= 1.5) : 76
-  dont dans les 24 mois precedant un krach liste : 16
+Mois 'rouges' (z composite >= 1.5) : 91
+  dont dans les 24 mois precedant un krach liste : 31
   dont FAUX POSITIFS (rouge sans krach sous 24 mois) : 60
 
 Rappels : biais de survie (calibre sur les krachs survenus uniquement) ;

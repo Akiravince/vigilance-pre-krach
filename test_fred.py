@@ -24,6 +24,7 @@ def main() -> int:
     fred_series = sorted(
         {m["series"] for m in fred_ids}
         | {m["subtract_series"] for m in fred_ids if m.get("subtract_series")}
+        | {m["divide_series"] for m in fred_ids if m.get("divide_series")}
         | {"GDP"}
     )
 

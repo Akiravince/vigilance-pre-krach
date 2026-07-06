@@ -283,10 +283,10 @@ signes:
     poids: 7.50
     approximatif: true   # proxy AUTOMATIQUE mais indirect — marqué ≈
     metrics:
-      - key: debt_service_ratio
-        description: "Ratio de service de la dette des ménages (FRED TDSP, % du revenu disponible, trimestriel depuis 1980) — proxy ≈ de la dépendance au refinancement / dynamique Minsky « Ponzi ». A culminé fin 2007 juste avant la crise → danger sur les valeurs hautes (danger=high). Alternative plus large si un ID est trouvé : DSR BIS du secteur privé non financier."
+      - key: corp_debt_to_profits
+        description: "Dette des sociétés non financières (BCNSDODNS) ÷ leurs profits après impôt (NFCPATAX) — « années de profits pour rembourser la dette » (Z.1/NIPA, depuis 1947). Ratio élevé = dette qui dépasse la capacité à la servir par les résultats = dynamique Minsky « Ponzi » (dépendance au refinancement) → danger=high. Proxy ≈ mais AUTOMATIQUE et backtestable sur tous les krachs depuis ~1957. z-score insensible à l'échelle. SENS À VALIDER sur l'empreinte."
         source: fred
-        series: TDSP
+        series: BCNSDODNS
+        divide_series: NFCPATAX
         transform: level
         danger: high
-        min_hist_months: 60   # série débute 1980
