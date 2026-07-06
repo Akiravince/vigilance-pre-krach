@@ -200,3 +200,29 @@ signes:
         danger: high
         optional: true
         approximatif: true   # métrique ≈ : fichier manuel data/manual/ipo_volume.csv
+
+  - key: desequilibres
+    numero: 8
+    nom: "Déséquilibres globaux / flux de capitaux"
+    poids: 8.50
+    approximatif: false
+    metrics:
+      - key: current_account_gdp
+        description: "Balance courante US (base NIPA, NETFI) rapportée au PIB — un déficit qui se creuse (valeur basse) = entrées de capitaux / déséquilibre externe = danger. SENS À VALIDER sur l'empreinte (comme le signe 6). Le z-score étant insensible à l'échelle, ratio_gdp reste correct malgré l'unité NIPA."
+        source: fred
+        series: NETFI
+        transform: ratio_gdp
+        danger: low
+
+  - key: inegalites
+    numero: 15
+    nom: "Montée des inégalités / concentration des richesses"
+    poids: 8.33
+    approximatif: false
+    metrics:
+      - key: top1_wealth_share
+        description: "Part du patrimoine net détenue par le top 1 % (Distributional Financial Accounts de la Fed, trimestriel depuis 1989) — concentration croissante = danger."
+        source: fred
+        series: WFRBST01134
+        transform: level
+        danger: high
