@@ -86,12 +86,15 @@ def main() -> int:
     aff = pp.copy()
     for c in ("puissance_A", "fausses_alertes_B"):
         aff[c] = (aff[c].astype(float) * 100).round(0)
-    aff["nsr"] = aff["nsr"].astype(float).round(2)
-    aff["poids_suggere"] = aff["poids_suggere"].astype(float).round(2)
-    print("\nPouvoir predictif v3 (persistance ; trie par NSR croissant ;")
-    print("A et B en % de mois ; indicatif = < 3 krachs couverts) :")
-    print(aff[["puissance_A", "fausses_alertes_B", "nsr", "n_krachs_couverts",
-               "poids_actuel", "poids_suggere", "indicatif"]].to_string())
+    for c in ("nsr", "racine_inv_nsr", "poids_final"):
+        aff[c] = aff[c].astype(float).round(2)
+    print("\nPouvoir predictif v4 (NSR persistance ; poids = racine(1/NSR) sous")
+    print("contraintes : indicatif <= 1.0x moyenne, plafond 1.5x, plancher bruite) :")
+    print(aff[["puissance_A", "fausses_alertes_B", "nsr", "racine_inv_nsr",
+               "n_krachs_couverts", "n_krachs_persistants", "indicatif",
+               "bruite", "plafonne", "poids_actuel", "poids_final"]].to_string())
+    print(f"somme poids actuels {pp['poids_actuel'].sum():.2f} -> "
+          f"somme poids finaux {pp['poids_final'].sum():.2f}")
 
     # ---------------------------------------------- backtest anti-illusion
     # Depuis la tâche 1, « rouge » = couleur d'EN-TÊTE (pire signe >= seuil),
