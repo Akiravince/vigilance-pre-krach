@@ -73,7 +73,12 @@ def main() -> int:
     for sign in cfg["signes"]:
         k = sign["key"]
         z = _f(r.get(f"z_{k}"))
-        badge = '<span class="badge">≈ proxy approximatif</span>' if sign.get("approximatif") else ""
+        if sign.get("qualitatif"):
+            badge = '<span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span>'
+        elif sign.get("approximatif"):
+            badge = '<span class="badge">≈ proxy approximatif</span>'
+        else:
+            badge = ""
         mets = "".join(
             f'<li>{m["description"]}'
             + (' <span class="badge">≈</span>' if m.get("approximatif") else "")
@@ -121,6 +126,7 @@ def main() -> int:
  .card h3{{margin:2px 0 8px;font-size:1.02em}}
  .badge{{background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:10px;
         font-size:.72em;padding:1px 8px;vertical-align:middle}}
+ .badge-q{{background:#ede7f6;color:#4527a0;border-color:#b39ddb}}
  .thermo{{position:relative;background:#eceff1;height:22px;border-radius:11px;overflow:hidden}}
  .fill{{height:100%}} .zlab{{position:absolute;top:2px;left:10px;font-size:.8em;color:#263238}}
  .na{{color:#90a4ae;font-style:italic}}
@@ -155,6 +161,7 @@ séries publiques démarrent après 1945, voire 1990).</div>
 <div class="warn" style="margin-top:18px"><b>Notes d'honnêteté (à ne jamais retirer)</b><br>
 · Instrument d'analyse et de pédagogie — <b>pas</b> un signal de trading, aucune prétention sur le <i>timing</i>.<br>
 · Signe n°2 marqué « ≈ » : proxies imparfaits de la psychologie de foule.<br>
+· Signes « ⚠ qualitatif » (ex. n°7 déréglementation) : jugement, PAS une mesure — gris et hors composite tant qu'aucune évaluation manuelle n'est fournie.<br>
 · Calibration sur les seuls krachs survenus → biais de survie ; le vrai taux de faux positifs est inconnu et probablement élevé.<br>
 · Le déclencheur (signe 16) est par nature non mesurable : l'outil suit la fragilité accumulée, pas l'étincelle.</div>
 

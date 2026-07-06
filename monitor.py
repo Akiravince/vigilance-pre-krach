@@ -39,7 +39,8 @@ def main() -> int:
     print("-" * 78)
     for sign in cfg["signes"]:
         k, w = sign["key"], float(sign["poids"])
-        approx = " (~ proxy)" if sign.get("approximatif") else ""
+        approx = (" (qualitatif)" if sign.get("qualitatif")
+                  else " (~ proxy)" if sign.get("approximatif") else "")
         lv = sdf[k].last_valid_index() if k in sdf.columns else None
         if lv is None:
             print(f"  GRIS    z=  n/a  (aucune donnee)      "

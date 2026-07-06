@@ -226,3 +226,24 @@ signes:
         series: WFRBST01134
         transform: level
         danger: high
+
+  # ---------------------------------------------------------------------------
+  # Signes QUALITATIFS (jugement, pas de donnée publique automatique fiable).
+  # Marqués `qualitatif: true` → badge distinct, GRIS et hors composite tant
+  # qu'aucun fichier manuel n'est fourni. Ne jamais les confondre avec une mesure.
+  # ---------------------------------------------------------------------------
+  - key: dereglementation
+    numero: 7
+    nom: "Complaisance réglementaire / déréglementation"
+    poids: 8.43
+    approximatif: false
+    qualitatif: true
+    metrics:
+      - key: dereg_score
+        description: "Climat de déréglementation financière — JUGEMENT (pas une mesure). Épisodes marquants : Gramm-Leach-Bliley 1999, CFMA 2000, assouplissement du net capital rule SEC 2004, détricotage Dodd-Frank. Proxy objectif possible : indice de restrictions réglementaires RegData/Mercatus (sens inversé). En attente d'un fichier data/manual/dereg_score.csv (date,value ; valeur haute = déréglementation forte = danger)."
+        source: manual
+        series: dereg_score
+        transform: level
+        danger: high
+        optional: true
+        qualitatif: true
