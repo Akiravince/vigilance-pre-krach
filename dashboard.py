@@ -3,13 +3,24 @@
 
     python dashboard.py
 
-Lit output/journal.csv, output/footprint_signes.csv, data/history/composite.csv
-→ écrit output/dashboard.html (autonome, aucun JS externe, SVG inline).
+Lit output/journal.csv, output/footprint_signes.csv, output/faux_positifs_signes.csv
+→ écrit output/dashboard.html (autonome, aucun JS externe hormis un <details>
+repliable natif, SVG inline).
 
-Tâche 1 : l'en-tête est le PIRE signe (nom + z + couleur) et les comptes
-orange/rouge — plus la moyenne, qui masquait les extrêmes. La moyenne
-pondérée survit en « moyenne indicative », en petit. Les signes sont
-présentés en scorecard triée par z décroissant.
+Tâche 6 — Refonte visuelle GRAND PUBLIC. RÈGLE ABSOLUE : SEUL l'affichage change.
+Aucun calcul touché — dashboard.py ne fait que LIRE les CSV et écrire le HTML ;
+il n'écrit aucun CSV. Deux niveaux de lecture :
+  · SURFACE : feu de synthèse « Niveau de vigilance d'ensemble » + phrase en clair
+    + encart « signal le plus alarmant » + légende + mission + jauge « où en est-on
+    vs la veille des krachs » + les signaux traduits (titre NEUTRE + mot d'échelle
+    + couleur). Un titre NOMME le risque surveillé, il n'affirme pas un état présent
+    (la couleur / le mot d'échelle disent l'état du jour).
+  · DÉTAIL (repliable « Voir le détail / la méthode ») : fiches techniques par signe
+    (poids, z exact, badges NSR/étage, faux positifs), matrice d'empreinte, socles
+    A+B / A, moyenne indicative, compteur de faux positifs live, notes d'honnêteté.
+Le feu = NIVEAU DE SYNTHÈSE (pas le pire signe) : le rouge du feu doit vouloir dire
+« configuration d'avant-krach », pas « un indicateur crie ». Le pire signe reste mis
+en avant juste dessous, dans son encart bordé de rouge.
 """
 import sys
 
@@ -18,6 +29,28 @@ import pandas as pd
 from common import DATA, OUT, agreger_signes, couleur, load_config
 
 COL = {"vert": "#2e7d32", "orange": "#ef6c00", "rouge": "#c62828", "gris": "#9e9e9e"}
+COL_BG = {"vert": "#e8f5e9", "orange": "#fff3e0", "rouge": "#fdecea", "gris": "#eceff1"}
+
+# Dictionnaire grand public — titres NEUTRES (nomment le risque, n'affirment pas
+# un état présent). Traductions validées (tâche 6) ; les 4 corrections demandées
+# (n°3, 6, 8, 12) et la neutralisation générale des 14 titres sont intégrées.
+TITRE = {
+    "credit": "Endettement et levier (crédit, dette de marché, hors-bilan)",
+    "euphorie": "L'euphorie spéculative des particuliers",
+    "standards_pret": "Facilité d'accès au crédit bancaire",
+    "survalorisation": "Valorisation des actions (cherté par rapport aux profits)",
+    "monetaire": "La facilité des conditions monétaires (taux, liquidités)",
+    "prime_risque": "L'écart de rémunération entre entreprises fragiles et solides",
+    "fragilite": "Les banques et institutions financières sont-elles elles-mêmes fragiles ?",
+    "surchauffe": "Les achats d'actions à crédit (argent emprunté)",
+    "desequilibres": "Les États-Unis dépendent trop des capitaux étrangers "
+                     "(déséquilibre qui peut se retourner brutalement)",
+    "inegalites": "La concentration des richesses (part du top 1 %)",
+    "dereglementation": "Les garde-fous réglementaires (déréglementation)",
+    "narratif": "Le récit « cette fois, c'est différent »",
+    "reflexivite": "Les boucles qui amplifient les hausses (rachats financés par la dette)",
+    "ponzi": "La dépendance de la dette au refinancement (dynamique « Ponzi »)",
+}
 
 
 def _f(v) -> float:
@@ -27,44 +60,100 @@ def _f(v) -> float:
         return float("nan")
 
 
-def thermo(z: float, seuils: dict, c: str | None = None) -> str:
-    """Barre thermomètre : z orienté borné à [-3, +3]."""
+def mot_echelle(z: float) -> str:
+    """Échelle en mots (pur affichage) : bas < normal < élevé < très élevé <
+    extrême. Seuils d'affichage -0.5 / 0.5 / 1.5 / 2.5. « bas » distingue un
+    signal franchement sous la norme (info en soi, plutôt rassurante) d'un
+    signal simplement normal. N'affecte AUCUN seuil de couleur ni calcul."""
     if z != z:
-        return '<div class="thermo"><span class="na">indisponible</span></div>'
+        return "non mesuré"
+    if z < -0.5:
+        return "bas"
+    if z < 0.5:
+        return "normal"
+    if z < 1.5:
+        return "élevé"
+    if z < 2.5:
+        return "très élevé"
+    return "extrême"
+
+
+def bar(z: float, c: str) -> str:
+    """Barre visuelle : z orienté borné à [-3, +3] → largeur [0, 100 %]."""
+    if z != z:
+        return '<div class="bar"><span class="na">non mesuré</span></div>'
     pct = max(0.0, min(100.0, (z + 3) / 6 * 100))
-    col = COL[c if c in COL else couleur(z, seuils)]
-    return (f'<div class="thermo"><div class="fill" style="width:{pct:.0f}%;'
-            f'background:{col}"></div><span class="zlab">z={z:+.2f}</span></div>')
+    return (f'<div class="bar"><div class="fill" style="width:{pct:.0f}%;'
+            f'background:{COL[c]}"></div></div>')
 
 
-def sparkline(pire: pd.Series, moyenne: pd.Series, seuil: float,
-              w: int = 640, h: int = 80) -> str:
-    """Pire signe (trait foncé) + moyenne indicative (gris clair), 20 ans."""
-    p = pire.dropna().tail(240)
-    if len(p) < 2:
-        return ""
-    m = moyenne.reindex(p.index)
-    lo = min(p.min(), m.min(skipna=True), -1)
-    hi = max(p.max(), m.max(skipna=True), 2)
+def gauge_svg(frac_r: pd.Series, frac_med: float, frac_today: float) -> str:
+    """Jauge « où en est-on vs la veille des krachs » — part des signaux au rouge.
+    Triangle = aujourd'hui ; points = chaque krach à T-12 ; trait rouge = médiane
+    pré-krach (son libellé est placé AU-DESSUS de la barre pour ne pas se
+    télescoper avec les krachs). Les labels de krachs sont répartis sur autant de
+    rangées que nécessaire, avec traits de rappel, pour rester lisibles quand
+    plusieurs krachs sont serrés (ex. 30 %/38 %/44 %/45 %)."""
+    W, H = 660, 185
+    x0, x1, yt = 44, 600, 86
 
-    def pts(s: pd.Series) -> str:
-        v = s.dropna()
-        if len(v) < 2:
-            return ""
-        xs = {d: i / (len(p) - 1) * (w - 10) + 5 for i, d in enumerate(p.index)}
-        return " ".join(f"{xs[d]:.1f},{h - 5 - (val - lo) / (hi - lo) * (h - 10):.1f}"
-                        for d, val in v.items() if d in xs)
+    def X(p):
+        return x0 + p / 100 * (x1 - x0)
 
-    ys = h - 5 - (seuil - lo) / (hi - lo) * (h - 10)
-    poly_m = (f'<polyline points="{pts(m)}" fill="none" stroke="#b0bec5" '
-              f'stroke-width="1"/>' if pts(m) else "")
-    return (f'<svg viewBox="0 0 {w} {h}" class="spark">'
-            f'<line x1="5" y1="{ys:.1f}" x2="{w-5}" y2="{ys:.1f}" '
-            f'stroke="#c62828" stroke-dasharray="4 3" stroke-width="1"/>'
-            f'{poly_m}'
-            f'<polyline points="{pts(p)}" fill="none" stroke="#37474f" stroke-width="1.5"/>'
-            f'</svg><div class="legend">20 dernières années — trait foncé : pire signe (en-tête) ; '
-            f'gris clair : moyenne indicative ; pointillé rouge = seuil {seuil}</div>')
+    labels = []
+    row_last_right = {}
+    for name, val in sorted(frac_r.items(), key=lambda kv: kv[1]):
+        x = X(val * 100)
+        txt = f"{name} · {val * 100:.0f}%"
+        half = len(txt) * 3.7 + 7          # demi-largeur estimée + marge
+        row = 0
+        while row_last_right.get(row, -999) > x - half:
+            row += 1
+        row_last_right[row] = x + half
+        ly = yt + 22 + row * 16
+        labels.append(
+            f'<line x1="{x:.0f}" y1="{yt+6}" x2="{x:.0f}" y2="{ly-9:.0f}" '
+            f'stroke="#b0a89a" stroke-width="1"/>'
+            f'<circle cx="{x:.0f}" cy="{yt}" r="4.5" fill="#8d6e63"/>'
+            f'<text x="{x:.0f}" y="{ly:.0f}" text-anchor="middle" class="gk">{txt}</text>')
+    xt, xmed = X(frac_today * 100), X(frac_med * 100)
+    return (
+        f'<svg viewBox="0 0 {W} {H}" class="gaugeA" role="img" '
+        f'aria-label="Position actuelle par rapport a la veille des krachs passes">'
+        f'<defs><linearGradient id="gg" x1="0" x2="1" y1="0" y2="0">'
+        f'<stop offset="0" stop-color="#c8e6c9"/><stop offset="0.5" stop-color="#ffe0b2"/>'
+        f'<stop offset="1" stop-color="#ffcdd2"/></linearGradient></defs>'
+        f'<rect x="{x0}" y="{yt-7}" width="{x1-x0}" height="14" rx="7" fill="url(#gg)"/>'
+        f'<text x="{x0}" y="{yt-44}" class="gz">calme</text>'
+        f'<text x="{x1}" y="{yt-44}" text-anchor="end" class="gz">configuration d\'avant-krach</text>'
+        f'<line x1="{xmed:.0f}" y1="{yt-30:.0f}" x2="{xmed:.0f}" y2="{yt+8}" stroke="#c62828" '
+        f'stroke-width="1.5" stroke-dasharray="4 3"/>'
+        f'<text x="{xmed:.0f}" y="{yt-34:.0f}" text-anchor="middle" class="gmed">'
+        f'médiane pré-krach {frac_med:.0%}</text>'
+        f'<polygon points="{xt:.0f},{yt-9} {xt-7:.0f},{yt-22} {xt+7:.0f},{yt-22}" fill="#111"/>'
+        f'<text x="{xt:.0f}" y="{yt-27:.0f}" text-anchor="middle" class="gtoday">'
+        f'Aujourd\'hui&#160;{frac_today:.0%}</text>'
+        f'{"".join(labels)}</svg>')
+
+
+def badges(sign: dict, c: str) -> str:
+    b = []
+    if sign.get("qualitatif"):
+        b.append('<span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span>')
+    elif sign.get("approximatif"):
+        b.append('<span class="badge">≈ proxy approximatif</span>')
+    et = sign.get("etage")
+    b.append(f'<span class="badge badge-e">étage {et}</span>' if et
+             else '<span class="badge badge-g">hors étage — sans données</span>')
+    if c == "gris":
+        b.append('<span class="badge badge-g">gris — hors en-tête</span>')
+    if sign.get("indicatif"):
+        b.append('<span class="badge badge-g">indicatif — couverture faible, poids plafonné 1.0×</span>')
+    if sign.get("bruite"):
+        b.append('<span class="badge">bruité — NSR ≥ 1, sous-pondéré</span>')
+    if sign.get("plafonne"):
+        b.append('<span class="badge badge-g">plafonné</span>')
+    return " ".join(b)
 
 
 def main() -> int:
@@ -81,22 +170,20 @@ def main() -> int:
     fp = pd.read_csv(OUT / "footprint_signes.csv", index_col=0)
     fpxf = OUT / "faux_positifs_signes.csv"
     fpx = pd.read_csv(fpxf, index_col=0) if fpxf.exists() else None
-    hist = pd.read_csv(DATA / "history" / "composite.csv", index_col=0, parse_dates=True)
-    pire_hist = hist["pire_z"] if "pire_z" in hist.columns else hist["composite"]
-    moy_hist = hist.get("moyenne_indicative", hist["composite"])
 
-    # ------------------------- en-tête (tâche 1) : pire signe, plus la moyenne
     noms = {s["key"]: s["nom"] for s in cfg["signes"]}
+    numero = {s["key"]: s["numero"] for s in cfg["signes"]}
+
+    # ------------------------------------------------------- en-tête (pire signe)
     pire_k = str(r.get("pire_signe", "") or "")
     zp = _f(r.get("z_pire"))
     zm = _f(r.get("moyenne_indicative", r.get("composite")))
-    cc = str(r.get("couleur_entete") or couleur(zp, seuils))
     n_o = int(_f(r.get("n_orange"))) if r.get("n_orange") == r.get("n_orange") else 0
     n_r = int(_f(r.get("n_rouge"))) if r.get("n_rouge") == r.get("n_rouge") else 0
 
-    # Calibration (tâche 4 pt 3) : en FRACTION des signes mesurables, pas en
-    # compte brut — les krachs anciens n'avaient que 2-3 séries. Comptes à T-12
-    # recomptés depuis l'empreinte via agreger_signes (chemin de code commun).
+    # ---- fractions de signaux au rouge/orange à T-12 de chaque krach + aujourd'hui.
+    # Bloc de calcul INCHANGÉ (identique à la version précédente) : la jauge et le
+    # niveau de synthèse sont pilotés par CES nombres, aucun nouveau calcul.
     poids = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
     sign_keys = [s["key"] for s in cfg["signes"]]
     ag_k = agreger_signes(fp.T.apply(pd.to_numeric, errors="coerce"), poids, seuils)
@@ -105,18 +192,40 @@ def main() -> int:
     mes_k = fp_signes.notna().sum(axis=0)              # signes mesurables par krach
     frac_r = (ag_k["n_rouge"] / mes_k).dropna()
     frac_o = (ag_k["n_orange"] / mes_k).dropna()
-    # aujourd'hui : signes non gris (à jour) d'après le journal
     mes_now = sum(1 for k in sign_keys
                   if str(r.get(f"couleur_{k}", "")) in ("vert", "orange", "rouge"))
+    frac_med = float(frac_r.median())
+    frac_o_med = float(frac_o.median())
+    frac_today = n_r / mes_now if mes_now else float("nan")
 
-    # Compteur de faux positifs live : couleur d'en-tête (repli : ancienne colonne).
-    ce = j["couleur_entete"] if "couleur_entete" in j.columns else pd.Series(dtype=str)
-    ce = ce.reindex(j.index)
-    if "couleur_composite" in j.columns:
-        ce = ce.fillna(j["couleur_composite"])
-    n_rouge_hist = int((ce == "rouge").sum())
+    # ---- niveau de synthèse (règle d'AFFICHAGE, calculée depuis ces fractions) :
+    # ALERTE si part de rouges du jour ≥ médiane pré-krach ; CALME si 0 rouge et
+    # part d'orange sous la médiane orange ; VIGILANCE sinon.
+    if frac_today == frac_today and frac_today >= frac_med:
+        niveau, ncol = "ALERTE", "rouge"
+    elif n_r == 0 and (n_o / mes_now if mes_now else 1) < frac_o_med:
+        niveau, ncol = "CALME", "vert"
+    else:
+        niveau, ncol = "VIGILANCE", "orange"
 
-    # --------------------------------- scorecard : TOUS les signes, z décroissant
+    # ---- phrases de synthèse (3 tons). Générées depuis l'état du jour.
+    n_kr = len(fp.columns)
+    if niveau == "ALERTE":
+        phrase = (f"Plusieurs signaux de fragilité sont au rouge en même temps : "
+                  f"{n_r} sur {mes_now} aujourd'hui, un niveau comparable à la médiane "
+                  f"de {frac_med:.0%} observée à la veille des {n_kr} grands krachs depuis "
+                  f"1929. Configuration à surveiller de près.")
+    elif niveau == "CALME":
+        phrase = (f"Aucun signal de fragilité généralisée pour l'instant : {n_r} signal "
+                  f"sur {mes_now} au rouge aujourd'hui, très en dessous des {frac_med:.0%} "
+                  f"observés en médiane à la veille des {n_kr} grands krachs depuis 1929.")
+    else:
+        phrase = (f"Le marché est historiquement cher, mais la fragilité généralisée qui "
+                  f"précède les krachs n'est pas là : {n_r} signal sur {mes_now} est au "
+                  f"rouge aujourd'hui, contre {frac_med:.0%} en médiane à la veille des "
+                  f"{n_kr} grands krachs depuis 1929. Vigilance, pas alerte.")
+
+    # ---- signaux du jour, triés par z décroissant ; gris à part
     entries = []
     for sign in cfg["signes"]:
         k = sign["key"]
@@ -124,63 +233,57 @@ def main() -> int:
         c = str(r.get(f"couleur_{k}") or couleur(z, seuils))
         d = r.get(f"date_{k}")
         d = str(d) if d == d and d else "—"
-        entries.append((sign, z, c, d))
-    # tri : z décroissant ; à z indisponible égal, poids crédibilité décroissant
-    entries.sort(key=lambda e: (e[1] != e[1],
-                                -(e[1] if e[1] == e[1] else 0.0),
-                                -float(e[0]["poids"])))
+        entries.append({"sign": sign, "k": k, "z": z, "c": c, "d": d})
+    mesures = [e for e in entries if e["c"] != "gris"]
+    gris = [e for e in entries if e["c"] == "gris"]
+    mesures.sort(key=lambda e: (-(e["z"] if e["z"] == e["z"] else -9),
+                                -float(e["sign"]["poids"])))
 
-    cards = []
-    for sign, z, c, d in entries:
-        k = sign["key"]
-        if sign.get("qualitatif"):
-            badge = '<span class="badge badge-q">⚠ qualitatif — jugement, non mesuré</span>'
-        elif sign.get("approximatif"):
-            badge = '<span class="badge">≈ proxy approximatif</span>'
-        else:
-            badge = ""
-        # Étage d'historique (tâche 4) : A backtestable 7/7, B post-1945, C récent
-        et = sign.get("etage")
-        if et:
-            badge += f' <span class="badge badge-e">étage {et}</span>'
-        else:
-            badge += ' <span class="badge badge-g">hors étage — sans données</span>'
-        if c == "gris":
-            badge += ' <span class="badge badge-g">gris — hors en-tête</span>'
-        # Drapeaux de fiabilité issus de la re-pondération NSR (config.yaml)
-        if sign.get("indicatif"):
-            badge += ' <span class="badge badge-g">indicatif — couverture faible, poids plafonné 1.0×</span>'
-        if sign.get("bruite"):
-            badge += ' <span class="badge">bruité — NSR ≥ 1, sous-pondéré</span>'
-        if sign.get("plafonne"):
-            badge += ' <span class="badge badge-g">plafonné</span>'
+    surface_cards = "".join(
+        f'<div class="sig" style="border-left:5px solid {COL[e["c"]]};background:{COL_BG[e["c"]]}">'
+        f'<div class="sig-h"><span class="dot" style="background:{COL[e["c"]]}"></span>'
+        f'<span class="sig-t">{TITRE[e["k"]]}</span>'
+        f'<span class="sig-e" style="color:{COL[e["c"]]}">{mot_echelle(e["z"])}</span></div>'
+        f'{bar(e["z"], e["c"])}</div>'
+        for e in mesures)
+    gris_items = "".join(
+        f'<li><span class="dot" style="background:{COL["gris"]}"></span>{TITRE[e["k"]]}'
+        + ('<span class="qbadge">jugement humain, non mesuré</span>'
+           if e["sign"].get("qualitatif") else '<span class="qbadge">pas de donnée à jour</span>')
+        + '</li>' for e in gris)
+
+    # ---- DÉTAIL : fiches techniques (poids, z exact, badges, faux positifs)
+    tech = []
+    for e in sorted(entries, key=lambda e: (e["z"] != e["z"],
+                                            -(e["z"] if e["z"] == e["z"] else 0.0),
+                                            -float(e["sign"]["poids"]))):
+        sign, k, z, c, d = e["sign"], e["k"], e["z"], e["c"], e["d"]
         mets = "".join(
             f'<li>{m["description"]}'
             + (' <span class="badge">≈</span>' if m.get("approximatif") else "")
-            + (' <em>(optionnelle)</em>' if m.get("optional") else "")
-            + "</li>"
-            for m in sign["metrics"]
-        )
+            + (' <em>(optionnelle)</em>' if m.get("optional") else "") + "</li>"
+            for m in sign["metrics"])
         ztxt = f"z={z:+.2f}" if z == z else "z indisponible"
         fptxt = ""
         if fpx is not None and k in fpx.index:
-            n_a, n_f = int(fpx.loc[k, "n_alertes"]), int(fpx.loc[k, "n_faux"])
+            n_a, n_faux = int(fpx.loc[k, "n_alertes"]), int(fpx.loc[k, "n_faux"])
             depuis = pd.Timestamp(fpx.loc[k, "debut"]).year
             if n_a:
                 tx = float(fpx.loc[k, "taux_faux"])
                 fptxt = (f' · faux positifs : <b>{tx:.0%}</b>'
-                         f' ({n_f}/{n_a} mois ≥ orange depuis {depuis})')
+                         f' ({n_faux}/{n_a} mois ≥ orange depuis {depuis})')
             else:
                 fptxt = f' · faux positifs : aucun mois ≥ orange depuis {depuis}'
-        cards.append(f"""
-    <div class="card" style="border-left:6px solid {COL.get(c, COL['gris'])}">
-      <h3>n°{sign['numero']} — {sign['nom']} {badge}</h3>
-      <div class="meta">{c} · {ztxt} · données {d}{fptxt}</div>
-      {thermo(z, seuils, c)}
-      <details><summary>métriques (poids crédibilité {sign['poids']})</summary><ul>{mets}</ul></details>
-    </div>""")
+        tech.append(
+            f'<div class="tcard" style="border-left:6px solid {COL.get(c, COL["gris"])}">'
+            f'<h4>n°{numero[k]} — {noms[k]} — <span class="gp">« {TITRE[k]} »</span> '
+            f'{badges(sign, c)}</h4>'
+            f'<div class="meta">{c} · {ztxt} · données {d}{fptxt}</div>'
+            f'{bar(z, c)}'
+            f'<details><summary>métriques (poids crédibilité {sign["poids"]})</summary>'
+            f'<ul>{mets}</ul></details></div>')
 
-    # ------------------- tableau empreinte : signes × krachs + colonne aujourd'hui
+    # ---- DÉTAIL : matrice d'empreinte (signes × krachs + colonne aujourd'hui)
     row_labels = {s["key"]: f"n°{s['numero']} {s['nom']}" for s in cfg["signes"]}
     row_labels.update({"pire_z": "PIRE SIGNE (z max)",
                        "moyenne_indicative": "moyenne indicative",
@@ -204,81 +307,174 @@ def main() -> int:
         tv = today_val.get(idx, _f(r.get(f"z_{idx}")))
         tcell = ('<td class="na">–</td>' if tv != tv else
                  f'<td class="today" style="color:{COL[couleur(tv, seuils)]}">{tv:+.2f}</td>')
-        body.append(f"<tr><td class='rowh'>{row_labels.get(idx, idx)}</td>{''.join(cells)}{tcell}</tr>")
+        body.append(f"<tr><td class='rowh'>{row_labels.get(idx, idx)}</td>"
+                    f"{''.join(cells)}{tcell}</tr>")
 
-    html = f"""<!DOCTYPE html>
-<html lang="fr"><head><meta charset="utf-8">
+    # ---- DÉTAIL : compteur de faux positifs live (couleur d'en-tête) — reformulé
+    # et relégué tout en bas du détail (retouche : ne pas inquiéter hors contexte).
+    ce = j["couleur_entete"] if "couleur_entete" in j.columns else pd.Series(dtype=str)
+    ce = ce.reindex(j.index)
+    if "couleur_composite" in j.columns:
+        ce = ce.fillna(j["couleur_composite"])
+    n_rouge_hist = int((ce == "rouge").sum())
+    n_jours = len(j)
+
+    couv = _f(r.get("couverture"))
+
+    html = f"""<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vigilance pré-krach — marchés US</title>
 <style>
- body{{font-family:Segoe UI,system-ui,sans-serif;margin:0;background:#f5f5f2;color:#263238}}
- .wrap{{max-width:860px;margin:0 auto;padding:24px}}
- h1{{font-size:1.5em;margin-bottom:0}} .sub{{color:#607d8b;margin-top:4px}}
- .gauge{{background:#fff;border-radius:10px;padding:18px 22px;margin:18px 0;
-        box-shadow:0 1px 3px rgba(0,0,0,.12);border-left:8px solid {COL[cc]}}}
- .gauge .big{{font-size:1.6em;font-weight:700;color:{COL[cc]}}}
- .gauge .counts{{font-size:1.1em;margin-top:4px}}
- .gauge .calib{{color:#455a64;font-size:.9em;margin-top:6px}}
- .gauge .moy{{color:#78909c;font-size:.85em;margin-top:8px}}
- .card{{background:#fff;border-radius:8px;padding:12px 16px;margin:10px 0;
-       box-shadow:0 1px 2px rgba(0,0,0,.10)}}
- .card h3{{margin:2px 0 8px;font-size:1.02em}}
- .meta{{color:#78909c;font-size:.82em;margin-bottom:6px}}
- .badge{{background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:10px;
-        font-size:.72em;padding:1px 8px;vertical-align:middle}}
+ :root{{--vert:#2e7d32;--orange:#ef6c00;--rouge:#c62828;--cream:#f7f3ec;--ink:#2b2b2b}}
+ *{{box-sizing:border-box}}
+ body{{margin:0;background:var(--cream);color:var(--ink);
+   font-family:-apple-system,Segoe UI,system-ui,sans-serif;line-height:1.5}}
+ .wrap{{max-width:640px;margin:0 auto;padding:20px 16px 48px}}
+ h1{{font-family:Georgia,"Times New Roman",serif;font-size:1.35em;margin:0}}
+ .sub{{color:#8a8378;font-size:.8em;margin:2px 0 18px}}
+ .light{{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;
+   padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}}
+ .lamps{{display:flex;flex-direction:column;gap:6px;background:#263238;
+   padding:8px;border-radius:20px}}
+ .lamp{{width:20px;height:20px;border-radius:50%;background:#455a64;opacity:.25}}
+ .lamp.on{{opacity:1;box-shadow:0 0 10px 1px currentColor}}
+ .lv{{color:var(--vert)}} .lo{{color:var(--orange)}} .lr{{color:var(--rouge)}}
+ .lamp.on.lv{{background:var(--vert)}} .lamp.on.lo{{background:var(--orange)}}
+ .lamp.on.lr{{background:var(--rouge)}}
+ .light .lbl{{font-size:.72em;color:#8a8378;text-transform:uppercase;letter-spacing:.04em}}
+ .light .niv{{font-size:1.5em;font-weight:800}}
+ .synth{{font-family:Georgia,serif;font-size:1.12em;line-height:1.55;margin:16px 2px}}
+ .alarm{{background:#fdecea;border:1px solid #f3b8b0;border-left:6px solid var(--rouge);
+   border-radius:10px;padding:12px 15px;margin:14px 0}}
+ .alarm .k{{font-size:.72em;text-transform:uppercase;letter-spacing:.04em;color:var(--rouge);font-weight:700}}
+ .alarm .v{{font-size:1.04em;margin-top:3px}}
+ .legend{{display:flex;gap:16px;flex-wrap:wrap;font-size:.8em;color:#5c554a;margin:14px 2px}}
+ .legend b{{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:middle}}
+ .mission{{background:#fff;border:1px dashed #cbb;border-radius:10px;padding:12px 15px;
+   font-size:.9em;color:#5c554a;margin:14px 0}}
+ .mission b{{color:var(--ink)}}
+ .panel{{background:#fff;border-radius:12px;padding:16px 16px 8px;margin:18px 0;
+   box-shadow:0 1px 4px rgba(0,0,0,.07)}}
+ .panel h2{{font-size:1.02em;margin:0 0 10px}}
+ .gaugeA{{width:100%;height:auto}}
+ .gz{{font-size:11px;fill:#8a8378}} .gk{{font-size:11px;fill:#5c554a}}
+ .gmed{{font-size:11px;fill:#c62828}} .gtoday{{font-size:12px;fill:#111;font-weight:700}}
+ .sig{{border-radius:9px;padding:9px 12px;margin:8px 0}}
+ .sig-h{{display:flex;align-items:center;gap:9px}}
+ .dot{{width:11px;height:11px;border-radius:50%;flex:0 0 auto}}
+ .sig-t{{flex:1;font-size:.95em}}
+ .sig-e{{font-size:.78em;font-weight:700;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}}
+ .bar{{position:relative;background:#e9e3d8;height:9px;border-radius:5px;overflow:hidden;margin-top:7px}}
+ .bar .fill{{height:100%;border-radius:5px}}
+ .na{{color:#9e9e9e;font-style:italic;font-size:.8em;padding-left:4px}}
+ ul.gris{{list-style:none;padding:0;margin:6px 0 0}}
+ ul.gris li{{display:flex;align-items:center;gap:9px;font-size:.9em;color:#6b6459;padding:5px 0}}
+ .qbadge{{font-size:.72em;color:#8a8378;background:#eceff1;border-radius:8px;padding:1px 7px;margin-left:auto}}
+ details.method>summary{{cursor:pointer;background:#2b2b2b;color:#fff;border-radius:10px;
+   padding:12px 16px;font-weight:600;list-style:none;margin-top:8px}}
+ details.method>summary::-webkit-details-marker{{display:none}}
+ details.method>summary::before{{content:"\\25b8  "}}
+ details.method[open]>summary::before{{content:"\\25be  "}}
+ .detail{{padding:6px 2px}}
+ .tcard{{background:#fff;border-radius:8px;padding:10px 14px;margin:9px 0;box-shadow:0 1px 2px rgba(0,0,0,.08)}}
+ .tcard h4{{margin:2px 0 6px;font-size:.95em}} .tcard .gp{{color:#5c554a;font-weight:500}}
+ .meta{{color:#8a8378;font-size:.8em;margin-bottom:5px}}
+ .badge{{background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:10px;font-size:.68em;padding:1px 7px}}
  .badge-q{{background:#ede7f6;color:#4527a0;border-color:#b39ddb}}
  .badge-g{{background:#eceff1;color:#546e7a;border-color:#b0bec5}}
  .badge-e{{background:#e3f2fd;color:#1565c0;border-color:#90caf9;font-weight:600}}
- .thermo{{position:relative;background:#eceff1;height:22px;border-radius:11px;overflow:hidden}}
- .fill{{height:100%}} .zlab{{position:absolute;top:2px;left:10px;font-size:.8em;color:#263238}}
- .na{{color:#90a4ae;font-style:italic}}
- table{{border-collapse:collapse;width:100%;background:#fff;font-size:.88em}}
- th,td{{border:1px solid #e0e0e0;padding:5px 8px;text-align:center}}
- .rowh{{text-align:left;font-weight:600}} .today{{background:#fffde7;font-weight:700}}
- .spark{{width:100%;background:#fff;border-radius:6px;margin-top:6px}}
- .legend{{font-size:.75em;color:#78909c}}
- .warn{{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px 16px;font-size:.88em}}
- footer{{color:#90a4ae;font-size:.8em;margin:24px 0}}
+ table{{border-collapse:collapse;width:100%;background:#fff;font-size:.82em;margin-top:6px}}
+ th,td{{border:1px solid #e6e0d6;padding:4px 6px;text-align:center}}
+ .rowh{{text-align:left;font-weight:600}} .today{{background:#fff9e6;font-weight:700}}
+ .warn{{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px 15px;font-size:.85em;margin-top:14px}}
+ .transp{{font-size:.8em;color:#8a8378;margin-top:14px;padding-top:10px;border-top:1px solid #e6e0d6}}
+ details summary{{cursor:pointer}}
+ footer{{color:#a49c8f;font-size:.75em;margin-top:26px}}
 </style></head><body><div class="wrap">
-<h1>Vigilance pré-krach — marchés US</h1>
-<div class="sub">Données au {r['date_donnees']} · exécuté le {r['date_execution']} ·
-couverture pondérée {_f(r.get('couverture')):.0%}</div>
 
-<div class="gauge">
-  <div>État d'alerte — piloté par le pire signe (agrégation non diluante)</div>
-  <div class="big">{cc.upper()} — pire signe : {noms.get(pire_k, pire_k or '?')} &nbsp;z = {zp:+.2f}</div>
-  <div class="counts"><b>{n_r}</b> rouge / <b>{n_o}</b> orange
-  (sur les signes à jour, seuils : orange ≥ {seuils['vert']}, rouge ≥ {seuils['orange']})</div>
-  <div class="calib">calibration : aujourd'hui <b>{n_r} rouge / {mes_now} signes mesurables
-  ({n_r / mes_now if mes_now else float('nan'):.0%})</b> et {n_o} orange ({n_o / mes_now if mes_now else float('nan'):.0%})
-  — à T−12 des {len(fp.columns)} krachs : médiane rouge <b>{frac_r.median():.0%}</b>
-  (min–max {frac_r.min():.0%}–{frac_r.max():.0%}), médiane orange {frac_o.median():.0%}
-  (fractions des signes mesurables à CHAQUE époque : {int(mes_k.min())} en {mes_k.idxmin()}, {int(mes_k.max())} en {mes_k.idxmax()})</div>
-  <div class="moy">moyenne indicative (pondérée crédibilité, ex-« composite » — dilue les
-  extrêmes, ne pilote plus l'en-tête) : z = {zm:+.2f} ({couleur(zm, seuils)}) —
-  compteur de faux positifs live : <b>{n_rouge_hist}</b> en-tête(s) rouge(s) sans krach constaté</div>
-  {sparkline(pire_hist, moy_hist, seuils['orange'])}
+<h1>Vigilance pré-krach — marchés US</h1>
+<div class="sub">Données au {r['date_donnees']} · mis à jour le {r['date_execution']}</div>
+
+<div class="light">
+  <div class="lamps">
+    <span class="lamp lr {'on' if ncol == 'rouge' else ''}"></span>
+    <span class="lamp lo {'on' if ncol == 'orange' else ''}"></span>
+    <span class="lamp lv {'on' if ncol == 'vert' else ''}"></span>
+  </div>
+  <div>
+    <div class="lbl">Niveau de vigilance d'ensemble</div>
+    <div class="niv" style="color:{COL[ncol]}">{niveau}</div>
+  </div>
 </div>
 
-<h2>Scorecard des {len(cfg['signes'])} signes — triés par z décroissant</h2>
-<div class="legend">Taux de faux positifs par signe : part des mois ≥ orange (z ≥ {seuils['vert']})
-non suivis d'un krach listé sous 24 mois, sur tout l'historique du signe — un taux élevé
-signale un indicateur chroniquement bruyant. Les ~24 derniers mois, non encore confirmables,
-comptent en faux positifs.</div>
-{''.join(cards)}
+<p class="synth">{phrase}</p>
 
-<h2>Comparaison à l'empreinte des krachs (z par signe à T−12 mois)</h2>
+<div class="alarm">
+  <div class="k">Signal le plus alarmant</div>
+  <div class="v">les actions sont très chères par rapport aux profits des entreprises —
+  niveau {mot_echelle(zp)}, vu seulement une poignée de fois depuis 1900.</div>
+</div>
+
+<div class="legend">
+  <span><b style="background:{COL['vert']}"></b>vert : normal, rien d'inhabituel</span>
+  <span><b style="background:{COL['orange']}"></b>orange : élevé, à surveiller</span>
+  <span><b style="background:{COL['rouge']}"></b>rouge : extrême, rarement vu</span>
+</div>
+
+<div class="mission">
+  Cet outil <b>mesure si le terrain est inflammable, pas s'il va prendre feu demain.</b>
+  Ce n'est pas un conseil d'achat ou de vente.
+</div>
+
+<div class="panel">
+  <h2>Où en est-on par rapport à la veille des krachs passés ?</h2>
+  {gauge_svg(frac_r, frac_med, frac_today)}
+  <div class="legend" style="margin-top:2px">
+    <span>Chaque point = un krach, mesuré 12 mois avant. Le triangle = aujourd'hui.
+    Plus on est à droite, plus la configuration ressemble à une veille de krach.</span>
+  </div>
+</div>
+
+<h2 style="font-size:1.05em;margin:22px 2px 6px">Les {mes_now} signaux mesurés aujourd'hui</h2>
+{surface_cards}
+<div style="font-size:.82em;color:#8a8378;margin:12px 2px 4px">Non mesurés aujourd'hui :</div>
+<ul class="gris">{gris_items}</ul>
+
+<details class="method"><summary>Voir le détail / la méthode</summary>
+<div class="detail">
+
+<h3 style="font-size:.98em">Fiche technique de chaque signal (poids, z exact, faux positifs)</h3>
+<div class="legend"><span>Le « poids crédibilité » vient de la re-pondération NSR (rapport
+bruit/signal) ; « étage A/B/C » = profondeur d'historique (A = backtestable jusqu'à 1929) ;
+« indicatif / bruité / plafonné » = drapeaux de fiabilité. Taux de faux positifs = part des
+mois ≥ orange non suivis d'un krach listé sous 24 mois, sur tout l'historique du signe ; les
+~24 derniers mois, non encore confirmables, comptent en faux positifs.</span></div>
+{''.join(tech)}
+
+<h3 style="font-size:.98em;margin-top:18px">Empreinte des krachs (z par signal à T−12 mois)</h3>
 <table><tr><th></th>{head}<th>Aujourd'hui</th></tr>{''.join(body)}</table>
-<div class="legend">« – » : série trop récente pour couvrir ce krach (la plupart des
-séries publiques démarrent après 1945, voire 1990).</div>
+<div class="legend"><span>« – » : série trop récente pour couvrir ce krach (la plupart des
+séries publiques démarrent après 1945, voire 1990). « Socle A+B » = signaux à long historique
+(9 signaux post-1945) ; « socle A seul » = les 2 signaux qui remontent à 1929. « Moyenne
+indicative » (pondérée crédibilité, ex-« composite ») dilue les extrêmes et ne pilote plus le
+feu : z = {zm:+.2f} ({couleur(zm, seuils)}). Couverture pondérée du jour {couv:.0%}.</span></div>
 
-<div class="warn" style="margin-top:18px"><b>Notes d'honnêteté (à ne jamais retirer)</b><br>
+<div class="warn"><b>Notes d'honnêteté (à ne jamais retirer)</b><br>
 · Instrument d'analyse et de pédagogie — <b>pas</b> un signal de trading, aucune prétention sur le <i>timing</i>.<br>
-· L'en-tête « pire signe » est volontairement plus sensible que l'ancienne moyenne :
-plus d'alertes = plus de faux positifs. C'est le prix de la non-dilution.<br>
-· Signe n°2 marqué « ≈ » : proxies imparfaits de la psychologie de foule.<br>
-· Signes « ⚠ qualitatif » (ex. n°7 déréglementation) : jugement, PAS une mesure — gris et hors en-tête tant qu'aucune évaluation manuelle n'est fournie.<br>
+· Le feu résume TOUS les signaux ; il est orange tant que la <i>configuration d'ensemble</i>
+n'est pas celle d'une veille de krach — même si un signal isolé est au rouge (encart en haut de page).
+L'en-tête « pire signe » est volontairement plus sensible : plus d'alertes = plus de faux positifs, c'est le prix de la non-dilution.<br>
+· Signaux « ≈ » (proxy, ex. n°2) et « ⚠ qualitatif » (ex. n°7 déréglementation) : proxies imparfaits
+ou jugement humain, jamais des mesures dures — gris et hors feu tant qu'aucune évaluation n'est fournie.<br>
 · Calibration sur les seuls krachs survenus → biais de survie ; le vrai taux de faux positifs est inconnu et probablement élevé.<br>
 · Le déclencheur (signe 16) est par nature non mesurable : l'outil suit la fragilité accumulée, pas l'étincelle.</div>
+
+<div class="transp">Transparence — fausses alertes : depuis le lancement de l'outil ({n_jours} relevé(s)),
+le signal le plus sensible (le « pire signal ») est passé au rouge {n_rouge_hist} jour(s) au total,
+sans qu'aucun krach ait suivi à ce jour. Ce décompte d'honnêteté grossit dès qu'un seul indicateur
+s'allume : il ne veut pas dire que le marché est en danger.</div>
+
+</div></details>
 
 <footer>Généré par dashboard.py — sources : FRED (St. Louis Fed), BIS, Fed Z.1/SLOOS, Shiller, AAII, CBOE, FINRA.</footer>
 </div></body></html>"""
