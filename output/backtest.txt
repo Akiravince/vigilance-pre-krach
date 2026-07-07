@@ -3,7 +3,7 @@ Periode couverte par l'agregation : 1890-12 -> 2026-07
 Mois 'rouges' EN-TETE (pire signe, z >= 1.5) : 751
   dont dans les 24 mois precedant un krach liste : 142
   dont FAUX POSITIFS (rouge sans krach sous 24 mois) : 609
-(pour memoire, ancienne definition par la moyenne : 100 mois rouges)
+(pour memoire, ancienne definition par la moyenne : 99 mois rouges)
 
 Rappels : biais de survie (calibre sur les krachs survenus uniquement) ;
 couverture partielle avant 1990 (la plupart des series sont recentes) ;
@@ -11,5 +11,5 @@ l'en-tete 'pire signe' est VOLONTAIREMENT plus sensible que la moyenne
 -> plus d'alertes, donc plus de faux positifs : c'est le prix de la
 non-dilution ; le signe 16 (declencheur) reste par nature hors de portee.
 
-PROVENANCE DES POIDS : Poids re-dérivés le 2026-07-06 (NSR v4) : racine(1/NSR), fenêtre pré-krach T-18..T-6, plafond indicatif 1.0x moyenne (<4 krachs couverts ou <3 persistants), plafond général 1.5x, plancher bruité 0.25x (NSR>=1) ; somme 87.33 conservée. Voir en-tête de ce fichier et pouvoir_predictif().
-Ecart max |poids config - recommandation NSR du jour| : 2.46 (ATTENTION : > 0.5, relancer l'analyse ou re-valider les poids)
+PROVENANCE DES POIDS : Poids re-dérivés le 2026-07-07 (NSR v5) après ajout des métriques hors-bilan au signe 1 — méthode v4 inchangée : racine(1/NSR), fenêtre pré-krach T-18..T-6, plafond indicatif 1.0x (<4 krachs couverts ou <3 persistants), plafond général 1.5x, plancher bruité 0.25x ; somme 87.33 conservée. Historique v4 (2026-07-06) conservé dans le bloc de commentaires ci-dessus.
+Ecart max |poids config - recommandation NSR du jour| : 0.00 (OK)
