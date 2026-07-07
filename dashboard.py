@@ -4,23 +4,22 @@
     python dashboard.py
 
 Lit output/journal.csv, output/footprint_signes.csv, output/faux_positifs_signes.csv
-→ écrit output/dashboard.html (autonome, aucun JS externe hormis un <details>
-repliable natif, SVG inline).
+et data/history/sign_scores.csv → écrit output/dashboard.html (autonome, aucun JS
+externe hormis un <details> repliable natif, SVG inline).
 
-Tâche 6 — Refonte visuelle GRAND PUBLIC. RÈGLE ABSOLUE : SEUL l'affichage change.
-Aucun calcul touché — dashboard.py ne fait que LIRE les CSV et écrire le HTML ;
-il n'écrit aucun CSV. Deux niveaux de lecture :
+Tâche 6 / 6b — Refonte visuelle GRAND PUBLIC. RÈGLE ABSOLUE : SEUL l'affichage
+change. Aucun calcul touché — dashboard.py ne fait que LIRE les CSV et écrire le
+HTML ; il n'écrit aucun CSV. Deux niveaux de lecture :
   · SURFACE : feu de synthèse « Niveau de vigilance d'ensemble » + phrase en clair
     + encart « signal le plus alarmant » + légende + mission + jauge « où en est-on
     vs la veille des krachs » + les signaux traduits (titre NEUTRE + mot d'échelle
-    + couleur). Un titre NOMME le risque surveillé, il n'affirme pas un état présent
-    (la couleur / le mot d'échelle disent l'état du jour).
-  · DÉTAIL (repliable « Voir le détail / la méthode ») : fiches techniques par signe
-    (poids, z exact, badges NSR/étage, faux positifs), matrice d'empreinte, socles
-    A+B / A, moyenne indicative, compteur de faux positifs live, notes d'honnêteté.
-Le feu = NIVEAU DE SYNTHÈSE (pas le pire signe) : le rouge du feu doit vouloir dire
-« configuration d'avant-krach », pas « un indicateur crie ». Le pire signe reste mis
-en avant juste dessous, dans son encart bordé de rouge.
+    + couleur). Un titre NOMME le risque surveillé, il n'affirme pas un état présent.
+  · DÉTAIL (repliable) : fiches techniques par signe (poids, z exact, badges,
+    faux positifs) + un GRAPHIQUE d'historique par indicateur mesuré (tâche 6b :
+    courbe z lue depuis sign_scores.csv, bandes de fond aux seuils, krachs ombrés,
+    « pas de données à l'époque » pour un krach antérieur à la série), matrice
+    d'empreinte, socles A+B / A, moyenne indicative, notes d'honnêteté.
+Le feu = NIVEAU DE SYNTHÈSE (pas le pire signe).
 """
 import sys
 
@@ -87,13 +86,98 @@ def bar(z: float, c: str) -> str:
             f'background:{COL[c]}"></div></div>')
 
 
+def chart_svg(series: pd.Series, seuils: dict, krachs: list) -> str:
+    """Tâche 6b — mini-graphique d'historique d'un indicateur (AFFICHAGE seul, lu
+    depuis data/history/sign_scores.csv, aucun z recalculé). Bandes de fond
+    vert/orange/rouge aux seuils 0.5/1.5 ; courbe z de la 1re donnée réelle à
+    aujourd'hui ; 7 krachs ombrés (grisés + « pas de données à l'époque » s'ils
+    précèdent la série, jamais l'impression que l'indicateur n'a rien vu) ;
+    marqueur aujourd'hui ; années de krach staggerées pour rester lisibles."""
+    s = series.dropna()
+    if len(s) < 2:
+        return ""
+    key = str(series.name)
+    start, today = s.index.min(), s.index.max()
+    z_today = float(s.iloc[-1])
+    axis0 = min(start, min(d for _, d in krachs))
+    a0, t0 = axis0.toordinal(), today.toordinal()
+    span = max(1, t0 - a0)
+    ymin = min(float(s.min()), -1.0)
+    ymax = max(float(s.max()), 2.0)
+    W, H = 560, 140
+    PX0, PX1, PYt, PYb = 6, 554, 30, 116
+
+    def X(d):
+        return PX0 + (d.toordinal() - a0) / span * (PX1 - PX0)
+
+    def Y(z):
+        z = max(ymin, min(ymax, z))
+        return PYb - (z - ymin) / (ymax - ymin) * (PYb - PYt)
+
+    def cl(y):
+        return max(PYt, min(PYb, y))
+
+    y05, y15 = cl(Y(0.5)), cl(Y(1.5))
+    bands = (
+        f'<rect x="{PX0}" y="{y05:.1f}" width="{PX1-PX0}" height="{PYb-y05:.1f}" fill="{COL_BG["vert"]}"/>'
+        f'<rect x="{PX0}" y="{y15:.1f}" width="{PX1-PX0}" height="{y05-y15:.1f}" fill="{COL_BG["orange"]}"/>'
+        f'<rect x="{PX0}" y="{PYt}" width="{PX1-PX0}" height="{y15-PYt:.1f}" fill="{COL_BG["rouge"]}"/>'
+        f'<line x1="{PX0}" y1="{y05:.1f}" x2="{PX1}" y2="{y05:.1f}" stroke="#c8bfae" stroke-width="0.6" stroke-dasharray="3 2"/>'
+        f'<line x1="{PX0}" y1="{y15:.1f}" x2="{PX1}" y2="{y15:.1f}" stroke="#e0b48a" stroke-width="0.6" stroke-dasharray="3 2"/>')
+    xs = X(start)
+    has_grey = xs > PX0 + 1
+    grey = ""
+    if has_grey:
+        grey = (
+            f'<defs><pattern id="hd_{key}" width="6" height="6" patternTransform="rotate(45)" '
+            f'patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#eceff1"/>'
+            f'<line x1="0" y1="0" x2="0" y2="6" stroke="#cfd8dc" stroke-width="1.4"/></pattern></defs>'
+            f'<rect x="{PX0}" y="{PYt}" width="{xs-PX0:.1f}" height="{PYb-PYt}" fill="url(#hd_{key})"/>'
+            f'<text x="{(PX0+xs)/2:.0f}" y="{(PYt+PYb)/2:.0f}" text-anchor="middle" '
+            f'class="nodata">pas de données à l\'époque</text>')
+    kr = []
+    prev_x, prev_row = -999.0, 0
+    for nom, d in sorted(krachs, key=lambda nd: nd[1]):
+        if d.toordinal() < a0:
+            continue
+        x = X(d)
+        avant = d < start
+        fill = "#b0bec5" if avant else "#78909c"
+        op = "0.30" if avant else "0.34"
+        row = (1 - prev_row) if (x - prev_x) < 42 else 0
+        prev_x, prev_row = x, row
+        ly = PYt - 4 - row * 9
+        kr.append(
+            f'<rect x="{x-3:.1f}" y="{PYt}" width="6" height="{PYb-PYt}" fill="{fill}" opacity="{op}"/>'
+            f'<text x="{x:.0f}" y="{ly}" text-anchor="middle" class="kyr" '
+            f'fill="{"#9aa7b0" if avant else "#546e7a"}">{nom.split("-")[0]}</text>')
+    pts = " ".join(f"{X(d):.1f},{Y(v):.1f}" for d, v in s.items())
+    curve = f'<polyline points="{pts}" fill="none" stroke="#37474f" stroke-width="1.3"/>'
+    xt, yt2 = X(today), Y(z_today)
+    ct = COL[couleur(z_today, seuils)]
+    start_mk = (f'<line x1="{xs:.1f}" y1="{PYt}" x2="{xs:.1f}" y2="{PYb}" stroke="#8d6e63" '
+                f'stroke-width="1" stroke-dasharray="2 2"/>')
+    today_mk = (f'<circle cx="{xt:.1f}" cy="{yt2:.1f}" r="4.5" fill="{ct}" stroke="#fff" stroke-width="1.5"/>'
+                f'<text x="{xt:.0f}" y="{max(PYt+9, yt2-8):.0f}" text-anchor="end" class="tdy">aujourd\'hui</text>')
+    svg = (f'<svg viewBox="0 0 {W} {H}" class="chart" role="img" '
+           f'aria-label="Historique du signal">'
+           f'{bands}{grey}{"".join(kr)}{curve}{start_mk}{today_mk}</svg>')
+    an = start.year
+    lg = ('<div class="clg">Fond '
+          f'<b style="background:{COL_BG["vert"]}"></b> normal '
+          f'<b style="background:{COL_BG["orange"]}"></b> élevé '
+          f'<b style="background:{COL_BG["rouge"]}"></b> extrême · '
+          'bandes grises = les 7 krachs · ● = aujourd\'hui'
+          + (' · zone hachurée = avant les premières données' if has_grey else '')
+          + f'. Série disponible depuis {an}.</div>')
+    return f'<div class="chart-wrap">{svg}</div>{lg}'
+
+
 def gauge_svg(frac_r: pd.Series, frac_med: float, frac_today: float) -> str:
     """Jauge « où en est-on vs la veille des krachs » — part des signaux au rouge.
     Triangle = aujourd'hui ; points = chaque krach à T-12 ; trait rouge = médiane
-    pré-krach (son libellé est placé AU-DESSUS de la barre pour ne pas se
-    télescoper avec les krachs). Les labels de krachs sont répartis sur autant de
-    rangées que nécessaire, avec traits de rappel, pour rester lisibles quand
-    plusieurs krachs sont serrés (ex. 30 %/38 %/44 %/45 %)."""
+    pré-krach (libellé AU-DESSUS pour ne pas télescoper les krachs). Labels de
+    krachs répartis sur autant de rangées que nécessaire, avec traits de rappel."""
     W, H = 660, 185
     x0, x1, yt = 44, 600, 86
 
@@ -105,7 +189,7 @@ def gauge_svg(frac_r: pd.Series, frac_med: float, frac_today: float) -> str:
     for name, val in sorted(frac_r.items(), key=lambda kv: kv[1]):
         x = X(val * 100)
         txt = f"{name} · {val * 100:.0f}%"
-        half = len(txt) * 3.7 + 7          # demi-largeur estimée + marge
+        half = len(txt) * 3.7 + 7
         row = 0
         while row_last_right.get(row, -999) > x - half:
             row += 1
@@ -159,6 +243,7 @@ def badges(sign: dict, c: str) -> str:
 def main() -> int:
     cfg = load_config()
     seuils = cfg["normalisation"]["seuils"]
+    krachs = [(k["nom"], pd.Timestamp(k["date"])) for k in cfg["krachs"]]
 
     jf = OUT / "journal.csv"
     if not jf.exists():
@@ -170,6 +255,10 @@ def main() -> int:
     fp = pd.read_csv(OUT / "footprint_signes.csv", index_col=0)
     fpxf = OUT / "faux_positifs_signes.csv"
     fpx = pd.read_csv(fpxf, index_col=0) if fpxf.exists() else None
+    # tâche 6b : série z historique par indicateur (LECTURE seule pour les graphes)
+    hsf = DATA / "history" / "sign_scores.csv"
+    hist = (pd.read_csv(hsf, index_col=0, parse_dates=True) if hsf.exists()
+            else pd.DataFrame())
 
     noms = {s["key"]: s["nom"] for s in cfg["signes"]}
     numero = {s["key"]: s["numero"] for s in cfg["signes"]}
@@ -182,14 +271,14 @@ def main() -> int:
     n_r = int(_f(r.get("n_rouge"))) if r.get("n_rouge") == r.get("n_rouge") else 0
 
     # ---- fractions de signaux au rouge/orange à T-12 de chaque krach + aujourd'hui.
-    # Bloc de calcul INCHANGÉ (identique à la version précédente) : la jauge et le
-    # niveau de synthèse sont pilotés par CES nombres, aucun nouveau calcul.
+    # Bloc de calcul INCHANGÉ : la jauge et le niveau de synthèse sont pilotés par
+    # CES nombres, aucun nouveau calcul.
     poids = {s["key"]: float(s["poids"]) for s in cfg["signes"]}
     sign_keys = [s["key"] for s in cfg["signes"]]
     ag_k = agreger_signes(fp.T.apply(pd.to_numeric, errors="coerce"), poids, seuils)
     fp_signes = fp.loc[[i for i in fp.index if i in sign_keys]].apply(
         pd.to_numeric, errors="coerce")
-    mes_k = fp_signes.notna().sum(axis=0)              # signes mesurables par krach
+    mes_k = fp_signes.notna().sum(axis=0)
     frac_r = (ag_k["n_rouge"] / mes_k).dropna()
     frac_o = (ag_k["n_orange"] / mes_k).dropna()
     mes_now = sum(1 for k in sign_keys
@@ -198,9 +287,7 @@ def main() -> int:
     frac_o_med = float(frac_o.median())
     frac_today = n_r / mes_now if mes_now else float("nan")
 
-    # ---- niveau de synthèse (règle d'AFFICHAGE, calculée depuis ces fractions) :
-    # ALERTE si part de rouges du jour ≥ médiane pré-krach ; CALME si 0 rouge et
-    # part d'orange sous la médiane orange ; VIGILANCE sinon.
+    # ---- niveau de synthèse (règle d'AFFICHAGE, depuis ces fractions)
     if frac_today == frac_today and frac_today >= frac_med:
         niveau, ncol = "ALERTE", "rouge"
     elif n_r == 0 and (n_o / mes_now if mes_now else 1) < frac_o_med:
@@ -208,7 +295,6 @@ def main() -> int:
     else:
         niveau, ncol = "VIGILANCE", "orange"
 
-    # ---- phrases de synthèse (3 tons). Générées depuis l'état du jour.
     n_kr = len(fp.columns)
     if niveau == "ALERTE":
         phrase = (f"Plusieurs signaux de fragilité sont au rouge en même temps : "
@@ -252,7 +338,7 @@ def main() -> int:
            if e["sign"].get("qualitatif") else '<span class="qbadge">pas de donnée à jour</span>')
         + '</li>' for e in gris)
 
-    # ---- DÉTAIL : fiches techniques (poids, z exact, badges, faux positifs)
+    # ---- DÉTAIL : fiches techniques (chiffres AU-DESSUS + graphique 6b en dessous)
     tech = []
     for e in sorted(entries, key=lambda e: (e["z"] != e["z"],
                                             -(e["z"] if e["z"] == e["z"] else 0.0),
@@ -274,12 +360,15 @@ def main() -> int:
                          f' ({n_faux}/{n_a} mois ≥ orange depuis {depuis})')
             else:
                 fptxt = f' · faux positifs : aucun mois ≥ orange depuis {depuis}'
+        # graphique d'historique (tâche 6b) : seulement pour les signaux mesurés
+        chart = chart_svg(hist[k], seuils, krachs) if (len(hist) and k in hist.columns) else ""
         tech.append(
             f'<div class="tcard" style="border-left:6px solid {COL.get(c, COL["gris"])}">'
             f'<h4>n°{numero[k]} — {noms[k]} — <span class="gp">« {TITRE[k]} »</span> '
             f'{badges(sign, c)}</h4>'
             f'<div class="meta">{c} · {ztxt} · données {d}{fptxt}</div>'
             f'{bar(z, c)}'
+            f'{chart}'
             f'<details><summary>métriques (poids crédibilité {sign["poids"]})</summary>'
             f'<ul>{mets}</ul></details></div>')
 
@@ -310,8 +399,7 @@ def main() -> int:
         body.append(f"<tr><td class='rowh'>{row_labels.get(idx, idx)}</td>"
                     f"{''.join(cells)}{tcell}</tr>")
 
-    # ---- DÉTAIL : compteur de faux positifs live (couleur d'en-tête) — reformulé
-    # et relégué tout en bas du détail (retouche : ne pas inquiéter hors contexte).
+    # ---- DÉTAIL : compteur de faux positifs live (couleur d'en-tête) — relégué bas
     ce = j["couleur_entete"] if "couleur_entete" in j.columns else pd.Series(dtype=str)
     ce = ce.reindex(j.index)
     if "couleur_composite" in j.columns:
@@ -383,6 +471,12 @@ def main() -> int:
  .badge-q{{background:#ede7f6;color:#4527a0;border-color:#b39ddb}}
  .badge-g{{background:#eceff1;color:#546e7a;border-color:#b0bec5}}
  .badge-e{{background:#e3f2fd;color:#1565c0;border-color:#90caf9;font-weight:600}}
+ .chart-wrap{{background:#fffdf9;border:1px solid #eee6d8;border-radius:6px;padding:4px;margin-top:8px}}
+ .chart{{width:100%;height:auto;display:block}}
+ .kyr{{font-size:8px}} .nodata{{font-size:9px;fill:#90a4ae;font-style:italic}}
+ .tdy{{font-size:9px;fill:#37474f;font-weight:700}}
+ .clg{{font-size:.74em;color:#6b6459;margin:5px 2px 0}}
+ .clg b{{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin:0 1px}}
  table{{border-collapse:collapse;width:100%;background:#fff;font-size:.82em;margin-top:6px}}
  th,td{{border:1px solid #e6e0d6;padding:4px 6px;text-align:center}}
  .rowh{{text-align:left;font-weight:600}} .today{{background:#fff9e6;font-weight:700}}
@@ -443,12 +537,12 @@ def main() -> int:
 <details class="method"><summary>Voir le détail / la méthode</summary>
 <div class="detail">
 
-<h3 style="font-size:.98em">Fiche technique de chaque signal (poids, z exact, faux positifs)</h3>
-<div class="legend"><span>Le « poids crédibilité » vient de la re-pondération NSR (rapport
-bruit/signal) ; « étage A/B/C » = profondeur d'historique (A = backtestable jusqu'à 1929) ;
-« indicatif / bruité / plafonné » = drapeaux de fiabilité. Taux de faux positifs = part des
-mois ≥ orange non suivis d'un krach listé sous 24 mois, sur tout l'historique du signe ; les
-~24 derniers mois, non encore confirmables, comptent en faux positifs.</span></div>
+<h3 style="font-size:.98em">Fiche technique de chaque signal (chiffres + graphique d'historique)</h3>
+<div class="legend"><span>Sous les chiffres, un graphique montre l'évolution du signal dans le temps :
+fond vert/orange/rouge aux mêmes seuils que les couleurs, krachs ombrés, position d'aujourd'hui.
+« poids crédibilité » = re-pondération NSR ; « étage A/B/C » = profondeur d'historique
+(A = backtestable jusqu'à 1929) ; « indicatif / bruité / plafonné » = drapeaux de fiabilité.
+Taux de faux positifs = part des mois ≥ orange non suivis d'un krach sous 24 mois.</span></div>
 {''.join(tech)}
 
 <h3 style="font-size:.98em;margin-top:18px">Empreinte des krachs (z par signal à T−12 mois)</h3>
