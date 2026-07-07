@@ -20,6 +20,22 @@
 #   au premier appel API réel → `python test_fred.py`
 
 # -----------------------------------------------------------------------------
+# POIDS re-dérivés le 2026-07-07 (NSR v5) — APRÈS AJOUT DES MÉTRIQUES
+# HORS-BILAN AU SIGNE 1 (tâche 5a : ABS/PIB + part de dette de marché),
+# validés par Vincent. Méthode STRICTEMENT identique à la v4 ci-dessous
+# (NSR persistance T-18..T-6, racine(1/NSR), plafonds 1.0x/1.5x, plancher
+# bruité) ; seules les DONNÉES ont changé :
+#   - signe 1 : composition élargie, historique dès 1956, NSR 0.35 -> 0.61
+#     (B 21 % -> 37 % : la part de dette de marché est bavarde en période
+#     calme) -> poids 11.79 -> 9.33, seul perdant.
+#   - les 2.46 pts libérés se redistribuent au prorata des racine(1/NSR) :
+#     monétaire +0.44 (nouveau 1er, 11.30), survalorisation +0.38,
+#     déséquilibres +0.37, ponzi +0.32, inégalités +0.31, réflexivité +0.29,
+#     primes +0.19, standards +0.15 ; fragilité et surchauffe restent à leur
+#     plafond indicatif 7.94 (surchauffe gagne le drapeau plafonné).
+#   - aucun changement de statut indicatif/bruité ; somme 87.33 conservée.
+#   Détail : output/pouvoir_predictif_signes.csv au commit de cette ligne.
+# -----------------------------------------------------------------------------
 # POIDS re-dérivés le 2026-07-06 (tâche 3 v4) depuis le pouvoir prédictif RÉEL,
 # validés par Vincent. Méthode (common.pouvoir_predictif, calibrate.py) :
 #   NSR = B/A (Kaminsky-Reinhart, même unité : proportion de mois)
@@ -52,10 +68,11 @@
 # -----------------------------------------------------------------------------
 
 provenance_poids: >-
-  Poids re-dérivés le 2026-07-06 (NSR v4) : racine(1/NSR), fenêtre pré-krach
-  T-18..T-6, plafond indicatif 1.0x moyenne (<4 krachs couverts ou <3
-  persistants), plafond général 1.5x, plancher bruité 0.25x (NSR>=1) ;
-  somme 87.33 conservée. Voir en-tête de ce fichier et pouvoir_predictif().
+  Poids re-dérivés le 2026-07-07 (NSR v5) après ajout des métriques hors-bilan
+  au signe 1 — méthode v4 inchangée : racine(1/NSR), fenêtre pré-krach
+  T-18..T-6, plafond indicatif 1.0x (<4 krachs couverts ou <3 persistants),
+  plafond général 1.5x, plancher bruité 0.25x ; somme 87.33 conservée.
+  Historique v4 (2026-07-06) conservé dans le bloc de commentaires ci-dessus.
 
 normalisation:
   # Z-score en fenêtre EXPANSIVE (point-in-time : seule l'histoire passée est
@@ -80,7 +97,7 @@ signes:
     numero: 1
     etage: B   # z depuis 1967-06 — règle « métrique la plus ancienne »
     nom: "Expansion excessive du crédit / levier"
-    poids: 11.79   # NSR v4 2026-07-06 — ancien 8.03
+    poids: 9.33   # NSR v5 2026-07-07 — ancien (v4) 11.79
     approximatif: false
     metrics:
       - key: credit_gdp_gap
@@ -142,7 +159,7 @@ signes:
     numero: 3
     etage: C   # z depuis 1995-03 — règle « métrique la plus ancienne »
     nom: "Innovation financière / relâchement des standards de prêt"
-    poids: 3.67   # NSR v4 2026-07-06 — ancien 7.70
+    poids: 3.82   # NSR v5 2026-07-07 — ancien (v4) 3.67
     indicatif: true   # 3 krachs couverts, 0 persistant
     bruite: true   # NSR 3.63 : bruit > signal
     approximatif: false
@@ -159,7 +176,7 @@ signes:
     numero: 5
     etage: A   # z depuis 1890-12 (CAPE) — règle « métrique la plus ancienne »
     nom: "Survalorisation / prix vs fondamentaux"
-    poids: 9.14   # NSR v4 2026-07-06 — ancien 7.44
+    poids: 9.52   # NSR v5 2026-07-07 — ancien (v4) 9.14
     approximatif: false
     metrics:
       - key: cape
@@ -179,7 +196,7 @@ signes:
     numero: 9
     etage: B   # z depuis 1969-12 (M2 ; courbe 1991, taux réel 2007) — règle « métrique la plus ancienne »
     nom: "Conditions monétaires accommodantes"
-    poids: 10.86   # NSR v4 2026-07-06 — ancien 7.90
+    poids: 11.3   # NSR v5 2026-07-07 — ancien (v4) 10.86
     approximatif: false
     metrics:
       - key: courbe_10a3m
@@ -206,7 +223,7 @@ signes:
     numero: 10
     etage: A   # z depuis 1928-12 (Baa-Aaa) — règle « métrique la plus ancienne »
     nom: "Compression des primes de risque / complaisance"
-    poids: 4.57   # NSR v4 2026-07-06 — ancien 7.80
+    poids: 4.76   # NSR v5 2026-07-07 — ancien (v4) 4.57
     indicatif: true   # 2 krachs persistants sur 7 couverts
     bruite: true   # NSR 2.34 : bruit > signal
     approximatif: false
@@ -238,7 +255,7 @@ signes:
     numero: 6
     etage: B   # z depuis 1980-12 — ne couvre pas 1973-74 — règle « métrique la plus ancienne »
     nom: "Fragilité structurelle du système financier"
-    poids: 7.94   # NSR v4 2026-07-06 — ancien 8.75
+    poids: 7.94   # NSR v5 2026-07-07 — ancien (v4) 7.94
     indicatif: true   # 1 seul krach persistant (2008)
     plafonne: true   # ramené à 1.0x la moyenne
     approximatif: false
@@ -254,8 +271,9 @@ signes:
     numero: 12
     etage: B   # z depuis 1959-09 — règle « métrique la plus ancienne »
     nom: "Surchauffe des transactions (volumes, IPO, margin)"
-    poids: 7.92   # NSR v4 2026-07-06 — ancien 7.63
+    poids: 7.94   # NSR v5 2026-07-07 — ancien (v4) 7.92
     indicatif: true   # 1 seul krach persistant (1973)
+    plafonne: true   # touche son plafond 1.0x depuis la v5
     approximatif: false
     metrics:
       - key: margin_loans_z1
@@ -277,7 +295,7 @@ signes:
     numero: 8
     etage: B   # z depuis 1956-12 — règle « métrique la plus ancienne »
     nom: "Déséquilibres globaux / flux de capitaux"
-    poids: 9.0   # NSR v4 2026-07-06 — ancien 8.50
+    poids: 9.37   # NSR v5 2026-07-07 — ancien (v4) 9.0
     approximatif: false
     metrics:
       - key: current_account_gdp
@@ -291,7 +309,7 @@ signes:
     numero: 15
     etage: C   # z depuis 1999-06 — règle « métrique la plus ancienne »
     nom: "Montée des inégalités / concentration des richesses"
-    poids: 7.39   # NSR v4 2026-07-06 — ancien 8.33
+    poids: 7.7   # NSR v5 2026-07-07 — ancien (v4) 7.39
     indicatif: true   # 3 krachs couverts seulement
     approximatif: false
     metrics:
@@ -343,7 +361,7 @@ signes:
     numero: 11
     etage: B   # z depuis 1959-09 — règle « métrique la plus ancienne »
     nom: "Réflexivité / boucles de rétroaction"
-    poids: 7.22   # NSR v4 2026-07-06 — ancien 7.75
+    poids: 7.51   # NSR v5 2026-07-07 — ancien (v4) 7.22
     approximatif: true   # proxy AUTOMATIQUE mais indirect du concept — marqué ≈
     metrics:
       - key: net_equity_issuance_gdp
@@ -357,7 +375,7 @@ signes:
     numero: 13
     etage: B   # z depuis 1957-05 — règle « métrique la plus ancienne »
     nom: "Dynamique « Ponzi » / refinancement perpétuel"
-    poids: 7.82   # NSR v4 2026-07-06 — ancien 7.50
+    poids: 8.14   # NSR v5 2026-07-07 — ancien (v4) 7.82
     approximatif: true   # proxy AUTOMATIQUE mais indirect — marqué ≈
     metrics:
       - key: corp_debt_to_profits
