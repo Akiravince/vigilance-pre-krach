@@ -1,8 +1,8 @@
 BACKTEST HONNETE (ne pas sur-interpreter)
 Periode couverte par l'agregation : 1890-12 -> 2026-11
-Mois 'rouges' EN-TETE (pire signe, z >= 1.5) : 741
+Mois 'rouges' EN-TETE (pire signe, z >= 1.5) : 748
   dont dans les 24 mois precedant un krach liste : 142
-  dont FAUX POSITIFS (rouge sans krach sous 24 mois) : 599
+  dont FAUX POSITIFS (rouge sans krach sous 24 mois) : 606
 (pour memoire, ancienne definition par la moyenne : 99 mois rouges)
 
 Rappels : biais de survie (calibre sur les krachs survenus uniquement) ;
